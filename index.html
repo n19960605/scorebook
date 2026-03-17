@@ -318,6 +318,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <button class="abtn" style="--c1:#7c4f1a;--c2:#4a2e0a" onclick="A.nav('allstats')">
         <span class="ai">📊</span><span class="at"><span class="at-t">通算個人成績</span><span class="at-s">全試合合計の打撃成績</span></span>
       </button>
+      <button class="abtn" style="--c1:#1a5276;--c2:#0d2d45" onclick="A.nav('backup')">
+        <span class="ai">⚙️</span><span class="at"><span class="at-t">バックアップ・復元</span><span class="at-s">データを守る・機種変更に備える</span></span>
+      </button>
     </div>
   </div>
   <div class="page" id="page-games">
@@ -360,12 +363,52 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     <button class="sbtn" onclick="A.createGame()">⚾ 試合を開始</button>
   </div>
 </main>
+  <!-- BACKUP PAGE -->
+  <div class="page" id="page-backup">
+    <div class="sec-title">⚙️ バックアップ・復元</div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">📤 データをバックアップ</div>
+      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
+        全ての試合・選手データをJSONファイルとして保存します。<br>
+        Googleドライブやメモリに保存しておくと機種変更時も安心です。
+      </div>
+      <button class="sbtn" onclick="A.backupData()" style="background:var(--navy)">
+        📤 バックアップファイルを作成
+      </button>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">📥 データを復元</div>
+      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
+        以前保存したバックアップファイルから復元します。<br>
+        <strong style="color:var(--red)">⚠️ 現在のデータは上書きされます。</strong>
+      </div>
+      <label style="display:block;width:100%;background:var(--bg3);border:2px dashed var(--border2);border-radius:11px;padding:16px;text-align:center;cursor:pointer;font-size:.85rem;color:var(--text2)">
+        📁 ファイルを選択してタップ
+        <input type="file" accept=".json" id="restore-file" style="display:none" onchange="A.restoreData(this)">
+      </label>
+    </div>
+
+    <div class="card" style="background:rgba(26,58,92,.04);border-color:rgba(26,58,92,.15)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:8px">💡 推奨の使い方</div>
+      <div style="font-size:.73rem;color:var(--text2);line-height:1.9">
+        1️⃣ 定期的に「バックアップ」を実行<br>
+        2️⃣ ダウンロードされたファイルをGoogleドライブに保存<br>
+        3️⃣ 機種変更・スマホ故障時は「復元」で全データを回復<br>
+        <br>
+        📌 ファイル名：<span style="font-family:monospace;background:var(--bg3);padding:1px 4px;border-radius:4px">scorebook_backup_日付.json</span>
+      </div>
+    </div>
+  </div>
+
 <nav id="bnav">
   <button class="nbtn active" data-p="home" onclick="A.nav('home')"><span class="ni">🏠</span><span class="nl">ホーム</span></button>
   <button class="nbtn" data-p="games" onclick="A.nav('games')"><span class="ni">📋</span><span class="nl">試合</span></button>
   <button class="nbtn" data-p="scorebook" id="nav-sb"><span class="ni">⚾</span><span class="nl">記録中</span></button>
   <button class="nbtn" data-p="allstats" onclick="A.nav('allstats')"><span class="ni">📊</span><span class="nl">通算成績</span></button>
   <button class="nbtn" data-p="players" onclick="A.nav('players')"><span class="ni">👥</span><span class="nl">選手</span></button>
+  <button class="nbtn" data-p="backup" onclick="A.nav('backup')"><span class="ni">⚙️</span><span class="nl">設定</span></button>
 </nav>
 <div class="toast" id="toast"></div>
 <script>
@@ -418,6 +461,7 @@ const A={
     if(p==='games')this._games();
     if(p==='players')this._players();
     if(p==='allstats')this._allStats();
+    if(p==='backup'){} // static page, no render needed
     if(p==='scorebook'&&this.curGameId)this._sb();
     if(p==='gamestats'&&this.curGameId)this._gStats();
   },
@@ -1483,6 +1527,67 @@ const A={
     document.body.appendChild(d);
     document.getElementById('cok').onclick=()=>{d.remove();onOk();};
   },
+    backupData(){
+    const data={
+      version:1,
+      date:new Date().toISOString(),
+      players:DB.players(),
+      games:DB.games()
+    };
+    const json=JSON.stringify(data,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const d=new Date();
+    const ds=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    a.href=url;
+    a.download=`scorebook_backup_${ds}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    const games=DB.games().length;
+    const players=DB.players().length;
+    A.toast(`✅ バックアップ完了（試合${games}件・選手${players}名）`);
+  },
+
+  restoreData(input){
+    const file=input.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const data=JSON.parse(e.target.result);
+        if(!data.players||!data.games){
+          A.toast('❌ ファイルが正しくありません');
+          return;
+        }
+        // Confirm before overwrite
+        this._confirm(
+          'データを復元しますか？',
+          `試合 ${data.games.length}件・選手 ${data.players.length}名
+バックアップ日時：${data.date?new Date(data.date).toLocaleString('ja-JP'):'不明'}
+
+現在のデータはすべて上書きされます。`,
+          ()=>{
+            DB.savePlayers(data.players);
+            DB.saveGames(data.games);
+            // Reset current game
+            this.curGameId=null;
+            this.nav('home');
+            A.toast(`✅ 復元完了（試合${data.games.length}件・選手${data.players.length}名）`);
+          },
+          '復元する'
+        );
+      }catch(err){
+        A.toast('❌ ファイルの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be selected again
+    input.value='';
+  },
+
     toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(this._tt);this._tt=setTimeout(()=>el.classList.remove('show'),2200)}
 };
 window.addEventListener('DOMContentLoaded',()=>{
