@@ -390,6 +390,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       </label>
     </div>
 
+    <div class="card" style="margin-bottom:12px;border-color:rgba(26,58,92,.25);background:rgba(26,58,92,.04)">
+      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">🔗 他の人のデータと結合</div>
+      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
+        他の人から受け取ったJSONファイルを現在のデータに追加します。<br>
+        ✅ 現在のデータは消えません。<br>
+        ✅ 重複する試合は自動でスキップします。<br>
+        ✅ 新しい試合・選手だけが追加されます。
+      </div>
+      <label style="display:block;width:100%;background:rgba(26,58,92,.08);border:2px dashed rgba(26,58,92,.3);border-radius:11px;padding:16px;text-align:center;cursor:pointer;font-size:.85rem;color:var(--navy);font-weight:700">
+        🔗 結合するファイルを選択
+        <input type="file" accept=".json" id="merge-file" style="display:none" onchange="A.mergeData(this)">
+      </label>
+    </div>
+
     <div class="card" style="background:rgba(26,58,92,.04);border-color:rgba(26,58,92,.15)">
       <div style="font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:8px">💡 推奨の使い方</div>
       <div style="font-size:.73rem;color:var(--text2);line-height:1.9">
@@ -397,7 +411,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         2️⃣ ダウンロードされたファイルをGoogleドライブに保存<br>
         3️⃣ 機種変更・スマホ故障時は「復元」で全データを回復<br>
         <br>
-        📌 ファイル名：<span style="font-family:monospace;background:var(--bg3);padding:1px 4px;border-radius:4px">scorebook_backup_日付.json</span>
+        📌 ファイル名：<span style="font-family:monospace;background:var(--bg3);padding:1px 4px;border-radius:4px">scorebook_backup_日付.json</span><br>
+        <br>
+        <strong style="color:var(--navy)">他の人のデータを取り込む場合：</strong><br>
+        4️⃣ 相手に「バックアップ」を実行してもらう<br>
+        5️⃣ LINEなどでJSONファイルを受け取る<br>
+        6️⃣「結合して読み込む」でデータを合体
       </div>
     </div>
   </div>
@@ -1304,6 +1323,67 @@ const A={
       this._sb();
       A.toast('取り消せる打席がありません');
     }
+  },
+
+  mergeData(input){
+    const file=input.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const data=JSON.parse(e.target.result);
+        if(!data.players||!data.games){
+          A.toast('❌ ファイルが正しくありません');
+          return;
+        }
+
+        const existingGames=DB.games();
+        const existingPlayers=DB.players();
+        const existingGameIds=new Set(existingGames.map(g=>g.id));
+        const existingPlayerIds=new Set(existingPlayers.map(p=>p.id));
+        const existingPlayerNames=new Set(existingPlayers.map(p=>p.name));
+
+        // New games: not in existing
+        const newGames=data.games.filter(g=>!existingGameIds.has(g.id));
+
+        // New players: not in existing by id or name
+        const newPlayers=data.players.filter(p=>
+          !existingPlayerIds.has(p.id)&&!existingPlayerNames.has(p.name)
+        );
+
+        if(newGames.length===0&&newPlayers.length===0){
+          A.toast('新しいデータはありませんでした（すべて重複）');
+          input.value='';
+          return;
+        }
+
+        this._confirm(
+          'データを結合しますか？',
+          `追加される試合: ${newGames.length}件
+追加される選手: ${newPlayers.length}名
+重複してスキップ: ${data.games.length-newGames.length}件
+
+現在のデータはそのまま残ります。`,
+          ()=>{
+            // Merge games
+            const mergedGames=[...existingGames,...newGames];
+            DB.saveGames(mergedGames);
+
+            // Merge players
+            const mergedPlayers=[...existingPlayers,...newPlayers];
+            DB.savePlayers(mergedPlayers);
+
+            this.nav('home');
+            A.toast(`✅ 結合完了！試合+${newGames.length}件・選手+${newPlayers.length}名`);
+          },
+          '結合する'
+        );
+      }catch(err){
+        A.toast('❌ ファイルの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+    input.value='';
   },
 
   // Runner advance (steal / passball) - remains same
