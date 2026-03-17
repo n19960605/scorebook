@@ -367,58 +367,57 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="page" id="page-backup">
     <div class="sec-title">⚙️ バックアップ・復元</div>
 
-    <div class="card" style="margin-bottom:12px">
-      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">📤 データをバックアップ</div>
-      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
-        全ての試合・選手データをJSONファイルとして保存します。<br>
-        Googleドライブやメモリに保存しておくと機種変更時も安心です。
-      </div>
-      <button class="sbtn" onclick="A.backupData()" style="background:var(--navy)">
-        📤 バックアップファイルを作成
-      </button>
-    </div>
+    <!-- 3ボタン横並び -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
 
-    <div class="card" style="margin-bottom:12px">
-      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">📥 データを復元</div>
-      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
-        以前保存したバックアップファイルから復元します。<br>
-        <strong style="color:var(--red)">⚠️ 現在のデータは上書きされます。</strong>
-      </div>
-      <label style="display:block;width:100%;background:var(--bg3);border:2px dashed var(--border2);border-radius:11px;padding:16px;text-align:center;cursor:pointer;font-size:.85rem;color:var(--text2)">
-        📁 ファイルを選択してタップ
+      <!-- バックアップ -->
+      <button onclick="A.backupData()" style="width:100%;background:var(--navy);border:none;border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left">
+        <span style="font-size:1.8rem;flex-shrink:0">📤</span>
+        <span>
+          <span style="display:block;font-size:.9rem;font-weight:900;color:#fff">バックアップ</span>
+          <span style="display:block;font-size:.7rem;color:rgba(255,255,255,.75);margin-top:2px">全データをJSONファイルで保存</span>
+        </span>
+      </button>
+
+      <!-- 復元 -->
+      <label style="width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left">
+        <span style="font-size:1.8rem;flex-shrink:0">📥</span>
+        <span>
+          <span style="display:block;font-size:.9rem;font-weight:900;color:var(--text)">復元</span>
+          <span style="display:block;font-size:.7rem;color:var(--text2);margin-top:2px">バックアップから上書き復元</span>
+          <span style="display:block;font-size:.65rem;color:var(--red);margin-top:2px;font-weight:700">⚠️ 現在のデータは上書きされます</span>
+        </span>
         <input type="file" accept=".json" id="restore-file" style="display:none" onchange="A.restoreData(this)">
       </label>
-    </div>
 
-    <div class="card" style="margin-bottom:12px;border-color:rgba(26,58,92,.25);background:rgba(26,58,92,.04)">
-      <div style="font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:6px">🔗 他の人のデータと結合</div>
-      <div style="font-size:.75rem;color:var(--text2);line-height:1.7;margin-bottom:12px">
-        他の人から受け取ったJSONファイルを現在のデータに追加します。<br>
-        ✅ 現在のデータは消えません。<br>
-        ✅ 重複する試合は自動でスキップします。<br>
-        ✅ 新しい試合・選手だけが追加されます。
-      </div>
-      <label style="display:block;width:100%;background:rgba(26,58,92,.08);border:2px dashed rgba(26,58,92,.3);border-radius:11px;padding:16px;text-align:center;cursor:pointer;font-size:.85rem;color:var(--navy);font-weight:700">
-        🔗 結合するファイルを選択
+      <!-- 結合 -->
+      <label style="width:100%;background:rgba(26,58,92,.06);border:1.5px solid rgba(26,58,92,.25);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left">
+        <span style="font-size:1.8rem;flex-shrink:0">🔗</span>
+        <span>
+          <span style="display:block;font-size:.9rem;font-weight:900;color:var(--navy)">他の人のデータと結合</span>
+          <span style="display:block;font-size:.7rem;color:var(--text2);margin-top:2px">受け取ったJSONを現在のデータに追加</span>
+          <span style="display:block;font-size:.65rem;color:var(--green2);margin-top:2px;font-weight:700">✅ 現在のデータは消えません</span>
+        </span>
         <input type="file" accept=".json" id="merge-file" style="display:none" onchange="A.mergeData(this)">
       </label>
+
     </div>
 
-    <div class="card" style="background:rgba(26,58,92,.04);border-color:rgba(26,58,92,.15)">
-      <div style="font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:8px">💡 推奨の使い方</div>
-      <div style="font-size:.73rem;color:var(--text2);line-height:1.9">
-        1️⃣ 定期的に「バックアップ」を実行<br>
-        2️⃣ ダウンロードされたファイルをGoogleドライブに保存<br>
-        3️⃣ 機種変更・スマホ故障時は「復元」で全データを回復<br>
+    <!-- 使い方（折りたたみ） -->
+    <details style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+      <summary style="font-size:.78rem;font-weight:700;color:var(--navy);cursor:pointer;list-style:none">💡 使い方を見る ▼</summary>
+      <div style="font-size:.72rem;color:var(--text2);line-height:1.9;margin-top:8px">
+        <strong>バックアップ・復元：</strong><br>
+        1️⃣ 定期的にバックアップを実行<br>
+        2️⃣ ファイルをGoogleドライブに保存<br>
+        3️⃣ 機種変更時は「復元」で回復<br>
         <br>
-        📌 ファイル名：<span style="font-family:monospace;background:var(--bg3);padding:1px 4px;border-radius:4px">scorebook_backup_日付.json</span><br>
-        <br>
-        <strong style="color:var(--navy)">他の人のデータを取り込む場合：</strong><br>
-        4️⃣ 相手に「バックアップ」を実行してもらう<br>
-        5️⃣ LINEなどでJSONファイルを受け取る<br>
-        6️⃣「結合して読み込む」でデータを合体
+        <strong>他の人のデータを取り込む：</strong><br>
+        4️⃣ 相手にバックアップしてもらう<br>
+        5️⃣ LINEなどでファイルを受け取る<br>
+        6️⃣「結合」でデータを合体
       </div>
-    </div>
+    </details>
   </div>
 
 <nav id="bnav">
