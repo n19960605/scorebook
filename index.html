@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="スコアブック">
+<meta name="theme-color" content="#0a0f1e">
+<title>⚾ 野球スコアブック</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f0f4f8;
+  --bg2:#ffffff;
+  --bg3:#e8edf2;
+  --navy:#1a3a5c;
+  --navy2:#1e4976;
+  --gold:#c77c00;
+  --gold-lt:#f59e0b;
+  --green:#15803d;
+  --green2:#16a34a;
+  --red:#dc2626;
+  --red2:#ef4444;
+  --text:#1a202c;
+  --text2:#4a5568;
+  --text3:#718096;
+  --white:#ffffff;
+  --border:#d1d9e0;
+  --border2:#b8c5d1;
+  --hit:#2563eb;
+  --hr:#dc2626;
+  --walk:#16a34a;
+  --k:#7c3aed;
+  --out:#6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;flex-direction:column}
+
+/* HEADER */
+#app-header{background:linear-gradient(135deg,var(--navy),var(--navy2));border-bottom:3px solid var(--gold-lt);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:52px}
+#app-header h1{font-family:'Oswald',sans-serif;font-size:1.15rem;color:#fff;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+.hbtns{display:flex;gap:6px}
+.ibtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.8rem;white-space:nowrap;font-family:'Noto Sans JP',sans-serif;font-weight:700}
+.ibtn:active{background:rgba(255,255,255,.28)}
+.ibtn.gold{background:var(--gold-lt);color:#fff;border-color:var(--gold-lt)}
+.ibtn.green{background:var(--green2);color:#fff;border-color:var(--green2)}
+.ibtn.red{background:var(--red2);color:#fff;border-color:var(--red2)}
+
+/* MAIN */
+#main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:var(--bg)}
+#main::-webkit-scrollbar{width:4px}
+#main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* PAGES */
+.page{display:none;padding:12px}
+.page.active{display:block}
+
+/* HOME */
+.home-hero{text-align:center;padding:20px 16px 14px;background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:16px;margin-bottom:14px;color:#fff}
+.home-hero .ball{font-size:3rem;margin-bottom:6px;display:block}
+.home-hero h2{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--gold-lt);letter-spacing:2px}
+.home-hero p{color:rgba(255,255,255,.75);font-size:.75rem;margin-top:3px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stat-card .num{font-family:'Oswald',sans-serif;font-size:2rem;color:var(--navy);line-height:1;font-weight:700}
+.stat-card .lbl{font-size:.65rem;color:var(--text3);margin-top:2px}
+.action-btns{display:flex;flex-direction:column;gap:9px}
+.abtn{background:linear-gradient(135deg,var(--c1),var(--c2));border:none;border-radius:13px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.abtn:active{opacity:.9;transform:scale(.99)}
+.abtn .ai{font-size:1.7rem;flex-shrink:0}
+.abtn .at{text-align:left}
+.abtn .at-t{font-size:.95rem;font-weight:900;color:#fff;display:block}
+.abtn .at-s{font-size:.72rem;color:rgba(255,255,255,.85);margin-top:1px;display:block}
+
+/* SECTION TITLE */
+.sec-title{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--navy);letter-spacing:1px;text-transform:uppercase;padding:3px 0 7px;border-bottom:2px solid var(--border);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+
+/* GAME CARD */
+.game-card{background:var(--white);border:1px solid var(--border);border-radius:13px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.gc-meta{font-size:.68rem;color:var(--text3);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gc-score{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:7px}
+.gc-team{text-align:center;flex:1}
+.gc-tname{font-size:.85rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-tsub{font-size:.6rem;color:var(--text3)}
+.gc-num{font-family:'Oswald',sans-serif;font-size:2.3rem;color:var(--navy);line-height:1;flex-shrink:0;font-weight:700}
+.gc-sep{color:var(--text3);font-size:1.1rem}
+.gc-actions{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gc-status{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700}
+.gc-status.live{background:rgba(22,163,74,.15);color:var(--green2);border:1px solid rgba(22,163,74,.3)}
+.gc-status.done{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+.del-btn{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:var(--red);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.75rem;font-family:'Noto Sans JP',sans-serif;font-weight:700}
+.del-btn:active{background:rgba(220,38,38,.18)}
+.open-btn{background:rgba(26,58,92,.1);border:1px solid rgba(26,58,92,.25);color:var(--navy);border-radius:8px;padding:4px 12px;cursor:pointer;font-size:.75rem;font-family:'Noto Sans JP',sans-serif;font-weight:700}
+.open-btn:active{background:rgba(26,58,92,.2)}
+
+/* SCOREBOARD */
+.scoreboard{background:var(--navy);border:2px solid var(--gold-lt);border-radius:11px;padding:9px;margin-bottom:9px;overflow-x:auto}
+.scoreboard::-webkit-scrollbar{height:3px}
+.scoreboard::-webkit-scrollbar-thumb{background:var(--gold-lt);border-radius:2px}
+.sb-table{border-collapse:collapse;min-width:100%}
+.sb-table td,.sb-table th{text-align:center;padding:3px;min-width:24px;font-family:'Oswald',sans-serif;font-size:.85rem}
+.sb-table th{color:var(--gold-lt);font-size:.65rem;border-bottom:1px solid rgba(240,192,64,.4)}
+.sb-team{text-align:left!important;min-width:80px!important;font-size:.75rem!important;font-family:'Noto Sans JP',sans-serif!important;font-weight:700;color:#fff!important}
+.sb-total{color:var(--gold-lt);font-weight:700;font-size:1.1rem!important;border-left:1px solid rgba(240,192,64,.4)}
+.sb-run{color:var(--gold-lt);font-weight:700}
+.sb-cur{background:rgba(240,192,64,.1)}
+.sb-zero{color:rgba(255,255,255,.4)}
+
+/* INNING BAR */
+.inn-bar{background:var(--white);border:1px solid var(--border);border-radius:9px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.inn-info .il{font-size:.65rem;color:var(--text3)}
+.inn-info .iv{font-family:'Oswald',sans-serif;font-size:1.7rem;color:var(--navy);line-height:1;font-weight:700}
+.inn-info .it{font-size:.72rem;color:var(--green2);font-weight:700}
+.next-btn{background:var(--green2);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Noto Sans JP',sans-serif}
+.next-btn:active{opacity:.9}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--bg3);border-radius:9px;padding:3px;margin-bottom:9px;gap:3px;border:1px solid var(--border)}
+.tab-btn{flex:1;background:transparent;border:none;color:var(--text2);padding:7px 5px;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.tab-btn.active{background:var(--navy);color:#fff}
+
+/* PLAYER ROW */
+.player-row{background:var(--white);border:1px solid var(--border);border-radius:9px;padding:7px 9px;margin-bottom:5px;display:flex;align-items:center;gap:9px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.player-row:active{border-color:var(--navy);background:rgba(26,58,92,.04)}
+.pr-order{width:24px;font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--navy);text-align:center;flex-shrink:0;font-weight:700}
+.pr-name{flex:1;font-size:.88rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-chips{display:flex;gap:2px;flex-shrink:0;max-width:130px;overflow:hidden}
+.chip{width:21px;height:21px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:900;color:#fff;flex-shrink:0}
+.c1b{background:#2563eb}.c2b{background:#0284c7}.c3b{background:#0891b2}.chr{background:#dc2626}
+.cbb{background:#16a34a}.chbp{background:#15803d}.ck{background:#7c3aed}
+.cout{background:#9ca3af}.csac{background:#a16207}.ce{background:#d97706}
+.pr-stat{text-align:right;flex-shrink:0}
+.ps-main{font-family:'Oswald',sans-serif;font-size:.95rem;color:var(--text);font-weight:700}
+.ps-avg{font-size:.65rem;color:var(--navy);font-weight:700}
+.pr-add{color:var(--green2);font-size:1rem;margin-left:2px;flex-shrink:0;font-weight:900}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:flex-end;backdrop-filter:blur(3px)}
+.sheet{background:var(--white);border-radius:20px 20px 0 0;border-top:3px solid var(--navy);width:100%;max-height:92dvh;overflow-y:auto;padding:15px;animation:slideUp .2s ease}
+.sheet::-webkit-scrollbar{display:none}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px}
+.mtitle{font-family:'Oswald',sans-serif;font-size:1.15rem;color:var(--navy)}
+.msub{font-size:.8rem;color:var(--text2);margin-top:2px}
+.xbtn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.9rem;font-weight:700}
+
+/* RESULT BUTTONS */
+.rs-sec{margin-bottom:13px}
+.rs-label{font-size:.68rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:5px;font-weight:700}
+.rs-label::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--lc,var(--text3));flex-shrink:0}
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.rbtn{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:8px 3px;cursor:pointer;text-align:center;color:var(--text)}
+.rbtn:active{opacity:.8}
+.rbtn .rsym{font-family:'Oswald',sans-serif;font-size:.95rem;color:var(--navy);display:block;font-weight:700}
+.rbtn .rlbl{font-size:.6rem;color:var(--text2);display:block;margin-top:1px}
+.rbtn.rhit{border-color:#2563eb;background:rgba(37,99,235,.06)}
+.rbtn.rwalk{border-color:#16a34a;background:rgba(22,163,74,.06)}
+.rbtn.rk{border-color:#7c3aed;background:rgba(124,58,237,.06)}
+.rbtn.rout{border-color:#9ca3af;background:rgba(156,163,175,.06)}
+
+/* COUNTER */
+.cnt-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px}
+.cnt-box{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:8px;text-align:center}
+.cnt-lbl{font-size:.68rem;color:var(--text2);margin-bottom:3px;font-weight:700}
+.cnt-ctrl{display:flex;align-items:center;justify-content:center;gap:7px}
+.cnt-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:.95rem;line-height:26px;font-weight:700}
+.cnt-val{font-family:'Oswald',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;text-align:center;font-weight:700}
+
+/* FORM */
+.fg{margin-bottom:11px}
+.flbl{font-size:.72rem;color:var(--navy);margin-bottom:3px;display:block;letter-spacing:1px;font-weight:700}
+.finput{width:100%;background:var(--white);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);padding:9px 11px;font-size:.88rem;font-family:'Noto Sans JP',sans-serif;outline:none}
+.finput:focus{border-color:var(--navy)}
+.finput::placeholder{color:var(--text3)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.sbtn{width:100%;background:var(--navy);border:none;color:#fff;border-radius:11px;padding:13px;font-size:.9rem;font-weight:900;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:4px}
+.sbtn:active{opacity:.9}
+.memo-input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;color:var(--text);padding:7px 9px;font-size:.82rem;font-family:'Noto Sans JP',sans-serif;margin-bottom:11px;outline:none}
+.memo-input:focus{border-color:var(--navy)}
+.memo-input::placeholder{color:var(--text3)}
+.undo-btn{width:100%;background:transparent;border:1.5px solid var(--red);color:var(--red);border-radius:9px;padding:9px;cursor:pointer;font-size:.82rem;font-weight:700;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Noto Sans JP',sans-serif}
+
+/* PLAYER MGMT */
+.pm-row{background:var(--white);border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:5px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.pm-icon{width:32px;height:32px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;border:1px solid var(--border)}
+.pm-name{flex:1;font-size:.88rem;font-weight:700;color:var(--text)}
+.pm-del{background:transparent;border:none;color:var(--red);font-size:1rem;cursor:pointer;padding:4px 7px}
+
+/* STATS TABLE */
+.stats-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--border)}
+.stats-scroll::-webkit-scrollbar{height:4px}
+.stats-scroll::-webkit-scrollbar-thumb{background:var(--border2)}
+.stbl{border-collapse:collapse;font-size:.72rem;min-width:750px;width:100%}
+.stbl th{background:var(--navy);color:#fff;padding:7px 8px;text-align:center;font-family:'Oswald',sans-serif;font-size:.78rem;white-space:nowrap;border-bottom:2px solid var(--gold-lt);position:sticky;top:0;z-index:1}
+.stbl th:first-child{text-align:left;min-width:72px;position:sticky;left:0;z-index:2;background:var(--navy)}
+.stbl td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text)}
+.stbl td:first-child{text-align:left;position:sticky;left:0;background:var(--white);z-index:1;font-weight:700;border-right:1px solid var(--border)}
+.stbl tr:nth-child(even) td{background:#f8fafc}
+.stbl tr:nth-child(even) td:first-child{background:#f8fafc}
+.stbl .hi{color:var(--green2);font-weight:700}
+.stbl .wa{color:var(--red);font-weight:700}
+.stbl .tot td{background:rgba(26,58,92,.08);font-weight:700;border-top:2px solid var(--navy);color:var(--navy)}
+.stbl .tot td:first-child{background:rgba(26,58,92,.08)}
+
+/* INNING EDITOR */
+.inn-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:13px}
+.inn-sel{background:var(--bg3);border:1.5px solid var(--border);color:var(--text2);border-radius:7px;padding:7px 3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.88rem;text-align:center;font-weight:700}
+.inn-sel.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.sc-row{display:flex;align-items:center;gap:14px;margin-bottom:13px}
+.sc-team{flex:1}
+.sc-name{font-size:.78rem;font-weight:700;margin-bottom:5px;color:var(--text)}
+.sc-ctrl{display:flex;align-items:center;gap:8px}
+.sc-v{font-family:'Oswald',sans-serif;font-size:1.9rem;color:var(--navy);width:44px;text-align:center;font-weight:700}
+.sc-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;flex-shrink:0;font-weight:700}
+
+/* LINEUP */
+.lineup-row{background:var(--white);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:9px}
+.lu-order{font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--navy);width:24px;text-align:center;flex-shrink:0;font-weight:700}
+.lu-name{flex:1;font-size:.88rem;font-weight:700;color:var(--text)}
+.lu-del{background:transparent;border:none;color:var(--text3);font-size:1rem;cursor:pointer;padding:2px 6px}
+.pl-sel-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border)}
+.pl-sel-row:last-child{border-bottom:none}
+.pl-sel-row label{flex:1;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text)}
+.pl-sel-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--navy);cursor:pointer;flex-shrink:0}
+
+/* BASE ADJUST */
+.base-adj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.base-adj-btn{background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:10px 6px;cursor:pointer;text-align:center}
+.base-adj-btn.on{background:rgba(26,58,92,.1);border-color:var(--navy)}
+.base-adj-btn:active{opacity:.8}
+.base-adj-btn .bb-base{font-size:1.3rem;display:block}
+.base-adj-btn .bb-label{font-size:.65rem;color:var(--text2);display:block;margin-top:2px;font-weight:700}
+.base-adj-btn .bb-runner{font-size:.6rem;color:var(--navy);display:block;margin-top:1px;font-weight:700;min-height:.8rem}
+.base-adj-btn.on .bb-label{color:var(--navy)}
+.score-adj-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:8px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--border)}
+.score-adj-row .sa-label{font-size:.78rem;color:var(--text);font-weight:700}
+.score-adj-row .sa-ctrl{display:flex;align-items:center;gap:8px}
+.score-adj-row .sa-val{font-family:'Oswald',sans-serif;font-size:1.3rem;color:var(--navy);width:28px;text-align:center;font-weight:700}
+
+/* RUNNER */
+.runner-section{background:rgba(26,58,92,.06);border:1.5px solid rgba(26,58,92,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.runner-row{display:flex;align-items:center;gap:14px}
+.runner-info{flex:1}
+.runner-info .ri-label{font-size:.68rem;color:var(--text2);margin-bottom:3px}
+.runner-info .ri-hint{font-size:.62rem;color:var(--navy);margin-top:3px;font-weight:700}
+.auto-badge{display:inline-block;background:rgba(22,163,74,.15);color:var(--green2);border:1px solid rgba(22,163,74,.3);border-radius:5px;padding:2px 6px;font-size:.6rem;font-weight:700;margin-left:5px}
+.runner-diamond{position:relative;width:90px;height:90px;flex-shrink:0}
+.runner-diamond .base{position:absolute;width:24px;height:24px;border:2px solid var(--border2);transform:rotate(45deg);cursor:pointer;transition:all .12s;border-radius:3px;background:var(--white)}
+.runner-diamond .base.on{background:var(--navy);border-color:var(--navy);box-shadow:0 0 6px rgba(26,58,92,.4)}
+.runner-diamond .base.home-base{width:20px;height:20px;background:var(--bg3);border:2px solid var(--border2)}
+.runner-diamond .base.home-base.run{background:var(--green2);border-color:var(--green2)}
+.base-1b{bottom:8px;right:4px}
+.base-2b{top:4px;right:30px}
+.base-3b{bottom:8px;left:4px}
+.base-home{bottom:8px;left:30px}
+.outs-row{display:flex;gap:6px;align-items:center;margin-bottom:10px}
+.out-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;background:var(--white)}
+.out-dot.filled{background:var(--gold-lt);border-color:var(--gold-lt)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--navy);border:1px solid var(--gold-lt);border-radius:11px;padding:9px 18px;font-size:.82rem;color:#fff;font-weight:700;z-index:999;transition:transform .22s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* CONFIRM */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.confirm-box{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.confirm-box h3{font-family:'Oswald',sans-serif;color:var(--navy);font-size:1.1rem;margin-bottom:8px}
+.confirm-box p{font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btns button{flex:1;padding:10px;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:700;font-family:'Noto Sans JP',sans-serif;border:none}
+.cbtn-cancel{background:var(--bg3);color:var(--text);border:1px solid var(--border)!important}
+.cbtn-ok{background:var(--red2);color:#fff}
+
+/* BOTTOM NAV */
+#bnav{background:var(--white);border-top:2px solid var(--border);display:flex;padding:5px 0 max(5px,env(safe-area-inset-bottom));flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,.08)}
+.nbtn{flex:1;background:none;border:none;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;font-family:'Noto Sans JP',sans-serif}
+.nbtn.active{color:var(--navy)}
+.nbtn.active .nl{font-weight:900}
+.ni{font-size:1.2rem}
+.nl{font-size:.58rem;font-weight:700;letter-spacing:.3px}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 18px;color:var(--text3)}
+.empty .ei{font-size:2.8rem;margin-bottom:9px}
+.empty p{font-size:.82rem;line-height:1.65}
+</style>
+</head>
+<body>
+<header id="app-header">
+  <h1>⚾ 野球スコアブック</h1>
+  <div class="hbtns" id="hbtns"></div>
+</header>
+<main id="main">
+  <div class="page active" id="page-home">
+    <div class="home-hero">
+      <div class="ball">⚾</div>
+      <h2>BASEBALL SCOREBOOK</h2>
+      <p>スマホで使える本格スコア記録アプリ</p>
+    </div>
+    <div class="stats-grid" id="home-stats"></div>
+    <div class="action-btns">
+      <button class="abtn" style="--c1:#1e6b3c;--c2:#145228" onclick="A.gotoNewGame()">
+        <span class="ai">➕</span><span class="at"><span class="at-t">新規試合を開始</span><span class="at-s">選手を選んでスコアを記録</span></span>
+      </button>
+      <button class="abtn" style="--c1:#1a3a6e;--c2:#0d2145" onclick="A.nav('games')">
+        <span class="ai">📋</span><span class="at"><span class="at-t">試合一覧</span><span class="at-s">確認・削除・続きを記録</span></span>
+      </button>
+      <button class="abtn" style="--c1:#5b2d8e;--c2:#3a1c5c" onclick="A.nav('players')">
+        <span class="ai">👥</span><span class="at"><span class="at-t">選手管理</span><span class="at-s">名前で登録するだけ</span></span>
+      </button>
+      <button class="abtn" style="--c1:#7c4f1a;--c2:#4a2e0a" onclick="A.nav('allstats')">
+        <span class="ai">📊</span><span class="at"><span class="at-t">通算個人成績</span><span class="at-s">全試合合計の打撃成績</span></span>
+      </button>
+    </div>
+  </div>
+  <div class="page" id="page-games">
+    <div class="sec-title"><span>📋 試合一覧</span><button class="ibtn green" onclick="A.gotoNewGame()">＋ 新規試合</button></div>
+    <div id="game-list"></div>
+  </div>
+  <div class="page" id="page-scorebook"><div id="sb-content"></div></div>
+  <div class="page" id="page-gamestats"><div id="gs-content"></div></div>
+  <div class="page" id="page-allstats">
+    <div class="sec-title">📊 通算個人成績</div>
+    <div style="font-size:.7rem;color:var(--green2);margin-bottom:10px;padding:6px 10px;background:rgba(40,168,94,.1);border-radius:8px;border:1px solid rgba(40,168,94,.2)">✅ 登録済み全試合の合計成績です</div>
+    <div id="all-stats-content"></div>
+  </div>
+  <div class="page" id="page-players">
+    <div class="sec-title">👥 選手管理</div>
+    <div id="player-list"></div>
+    <div style="margin-top:12px">
+      <div class="sec-title" style="font-size:.75rem">選手を追加（名前のみでOK）</div>
+      <div class="fg">
+        <label class="flbl">選手名</label>
+        <input class="finput" id="p-name" placeholder="例：田中 太郎">
+      </div>
+      <button class="sbtn" onclick="A.addPlayer()">＋ 追加する</button>
+    </div>
+  </div>
+  <div class="page" id="page-newgame">
+    <div class="sec-title">➕ 新規試合</div>
+    <div class="fg"><label class="flbl">自チーム名</label><input class="finput" id="ng-team" placeholder="例：東京タイガーズ"></div>
+    <div class="fg"><label class="flbl">相手チーム名</label><input class="finput" id="ng-opp" placeholder="例：大阪ライオンズ"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">日付</label><input class="finput" id="ng-date" type="date"></div>
+      <div class="fg"><label class="flbl">イニング数</label><select class="finput" id="ng-inn"><option value="7">7回</option><option value="9" selected>9回</option></select></div>
+    </div>
+    <div class="fg"><label class="flbl">球場名（任意）</label><input class="finput" id="ng-venue" placeholder="例：甲子園球場"></div>
+    <div class="fg"><label class="flbl">攻守</label><select class="finput" id="ng-side"><option value="away">先攻（Away）</option><option value="home">後攻（Home）</option></select></div>
+    <div class="sec-title" style="margin-top:8px;font-size:.75rem"><span>出場選手・打順を設定</span></div>
+    <div style="font-size:.72rem;color:var(--gray2);margin-bottom:7px">チェックした順番が打順になります（並び替え可能）</div>
+    <div id="lineup-display"></div>
+    <div id="player-checkboxes" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px"></div>
+    <button class="sbtn" onclick="A.createGame()">⚾ 試合を開始</button>
+  </div>
+</main>
+<nav id="bnav">
+  <button class="nbtn active" data-p="home" onclick="A.nav('home')"><span class="ni">🏠</span><span class="nl">ホーム</span></button>
+  <button class="nbtn" data-p="games" onclick="A.nav('games')"><span class="ni">📋</span><span class="nl">試合</span></button>
+  <button class="nbtn" data-p="scorebook" id="nav-sb"><span class="ni">⚾</span><span class="nl">記録中</span></button>
+  <button class="nbtn" data-p="allstats" onclick="A.nav('allstats')"><span class="ni">📊</span><span class="nl">通算成績</span></button>
+  <button class="nbtn" data-p="players" onclick="A.nav('players')"><span class="ni">👥</span><span class="nl">選手</span></button>
+</nav>
+<div class="toast" id="toast"></div>
+<script>
+const DB={
+  get(k,d=null){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},
+  players(){return this.get('sb_players',[])},
+  savePlayers(p){this.set('sb_players',p)},
+  games(){return this.get('sb_games',[])},
+  saveGames(g){this.set('sb_games',g)},
+  uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+};
+const HITS=['1B','2B','3B','HR'],NOAB=['BB','HBP','IBB','SAC','SF'];
+function calc(abs){
+  const AB=abs.filter(a=>!NOAB.includes(a.r)).length;
+  const H=abs.filter(a=>HITS.includes(a.r)).length;
+  const BB=abs.filter(a=>['BB','IBB'].includes(a.r)).length;
+  const HBP=abs.filter(a=>a.r==='HBP').length;
+  const SF=abs.filter(a=>a.r==='SF').length;
+  const SAC=abs.filter(a=>a.r==='SAC').length;
+  const K=abs.filter(a=>['K','Kc'].includes(a.r)).length;
+  const HR=abs.filter(a=>a.r==='HR').length;
+  const D2=abs.filter(a=>a.r==='2B').length;
+  const D3=abs.filter(a=>a.r==='3B').length;
+  const RBI=abs.reduce((s,a)=>s+(a.rbi||0),0);
+  const R=abs.reduce((s,a)=>s+(a.runs||0),0);
+  const TB=abs.reduce((s,a)=>s+({'1B':1,'2B':2,'3B':3,'HR':4}[a.r]||0),0);
+  const PA=abs.length;
+  const SB=abs.filter(a=>a.sb||false).length; // stolen bases stored as separate events
+  const BA=AB>0?H/AB:0;
+  const OBd=AB+BB+HBP+SF;
+  const OBP=OBd>0?(H+BB+HBP)/OBd:0;
+  const SLG=AB>0?TB/AB:0;
+  return{PA,AB,H,BB,HBP,SF,SAC,K,HR,D2,D3,RBI,R,TB,SB,BA,OBP,SLG,OPS:OBP+SLG};
+}
+function fmt(n){return n.toFixed(3).replace(/^0/,'')}
+function allAtBats(pid){
+  const abs=[];
+  DB.games().forEach(g=>(g.lineup||[]).forEach(lp=>{if(lp.playerId===pid)abs.push(...(lp.atBats||[]))}));
+  return abs;
+}
+const A={
+  curPage:'home',curGameId:null,sbTab:0,_lu:[],
+  nav(p){
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    document.getElementById('page-'+p).classList.add('active');
+    document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+    this.curPage=p;this._hdr();
+    if(p==='home')this._home();
+    if(p==='games')this._games();
+    if(p==='players')this._players();
+    if(p==='allstats')this._allStats();
+    if(p==='scorebook'&&this.curGameId)this._sb();
+    if(p==='gamestats'&&this.curGameId)this._gStats();
+  },
+  _hdr(){
+    const h=document.getElementById('hbtns'),p=this.curPage;
+    if(p==='scorebook'&&this.curGameId)h.innerHTML=`<button class="ibtn" onclick="A._openInn()">🏟 得点</button><button class="ibtn gold" onclick="A.nav('gamestats')">📊 成績</button><button class="ibtn" onclick="A.pdf()">📄 PDF</button>`;
+    else if(p==='gamestats'&&this.curGameId)h.innerHTML=`<button class="ibtn" onclick="A.pdf()">📄 PDF</button>`;
+    else if(p==='games')h.innerHTML=`<button class="ibtn green" onclick="A.gotoNewGame()">＋ 新規試合</button>`;
+    else h.innerHTML='';
+  },
+  _home(){
+    const g=DB.games(),p=DB.players();
+    document.getElementById('home-stats').innerHTML=`
+      <div class="stat-card"><div class="num">${g.length}</div><div class="lbl">試合数</div></div>
+      <div class="stat-card"><div class="num">${g.filter(x=>!x.fin).length}</div><div class="lbl">記録中</div></div>
+      <div class="stat-card"><div class="num">${p.length}</div><div class="lbl">選手登録</div></div>`;
+  },
+  _players(){
+    const pl=DB.players(),el=document.getElementById('player-list');
+    if(!pl.length){el.innerHTML='<div class="empty"><div class="ei">👥</div><p>選手が登録されていません<br>下のフォームから追加してください</p></div>';return;}
+    el.innerHTML=pl.map(p=>`<div class="pm-row"><div class="pm-icon">👤</div><div class="pm-name">${p.name}</div><button class="pm-del" onclick="A.delPlayer('${p.id}')">🗑</button></div>`).join('');
+  },
+  addPlayer(){
+    const name=document.getElementById('p-name').value.trim();
+    if(!name){A.toast('名前を入力してください');return;}
+    const pl=DB.players();pl.push({id:DB.uid(),name});DB.savePlayers(pl);
+    document.getElementById('p-name').value='';this._players();A.toast('✅ '+name+' を追加しました');
+  },
+  delPlayer(id){
+    this._confirm('選手を削除',`この選手を登録から削除します。\n（過去の試合記録は残ります）`,()=>{
+      DB.savePlayers(DB.players().filter(p=>p.id!==id));this._players();A.toast('削除しました');
+    },'削除する');
+  },
+  _games(){
+    const games=DB.games().slice().reverse(),el=document.getElementById('game-list');
+    if(!games.length){el.innerHTML='<div class="empty"><div class="ei">🏟</div><p>試合記録がありません<br>「新規試合」から始めましょう</p></div>';return;}
+    el.innerHTML=games.map(g=>{
+      const myS=g.side==='away'?g.awayS:g.homeS,opS=g.side==='away'?g.homeS:g.awayS;
+      return`<div class="game-card">
+        <div class="gc-meta"><span>📅 ${g.date}${g.venue?' 📍'+g.venue:''}</span><span class="gc-status ${g.fin?'done':'live'}">${g.fin?'終了':'記録中'}</span></div>
+        <div class="gc-score">
+          <div class="gc-team"><div class="gc-tname">${g.team}</div><div class="gc-tsub">${g.side==='away'?'先攻':'後攻'}</div></div>
+          <div class="gc-num">${myS}</div><div class="gc-sep">−</div><div class="gc-num">${opS}</div>
+          <div class="gc-team"><div class="gc-tname">${g.opp}</div><div class="gc-tsub">${g.side==='away'?'後攻':'先攻'}</div></div>
+        </div>
+        <div class="gc-actions">
+          <span style="font-size:.67rem;color:var(--gray2)">${g.fin?g.inn+'回終了':g.curInn+'回'+(g.top?'表':'裏')}</span>
+          <div style="display:flex;gap:6px">
+            <button class="del-btn" onclick="A.delGame('${g.id}')">🗑 削除</button>
+            <button class="open-btn" onclick="A.openGame('${g.id}')">▶ 開く</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  },
+  delGame(id){
+    const g=DB.games().find(x=>x.id===id);if(!g)return;
+    this._confirm('試合を削除',`${g.team} vs ${g.opp}（${g.date}）\nこの試合の記録を完全に削除します。取り消せません。`,()=>{
+      DB.saveGames(DB.games().filter(x=>x.id!==id));
+      if(this.curGameId===id)this.curGameId=null;
+      this._games();A.toast('🗑 試合を削除しました');
+    },'削除する');
+  },
+  openGame(id){this.curGameId=id;this.sbTab=0;this.nav('scorebook')},
+  getGame(id){return DB.games().find(g=>g.id===(id||this.curGameId))},
+  saveGame(g){DB.saveGames(DB.games().map(x=>x.id===g.id?g:x))},
+  recalc(g){let a=0,h=0;g.innScores.forEach(s=>{a+=(s.away||0);h+=(s.home||0)});g.awayS=a;g.homeS=h},
+  gotoNewGame(){
+    document.getElementById('ng-date').value=new Date().toISOString().slice(0,10);
+    const last=DB.games().slice(-1)[0];
+    if(last)document.getElementById('ng-team').value=last.team||'';
+    document.getElementById('ng-opp').value='';
+    document.getElementById('ng-venue').value='';
+    this._lu=[];this._renderLU();this.nav('newgame');
+  },
+  _renderLU(){
+    const pl=DB.players(),lu=this._lu;
+    const ldEl=document.getElementById('lineup-display');
+    ldEl.innerHTML=lu.length===0
+      ?'<div style="font-size:.78rem;color:var(--gray2);padding:4px 0 10px">↓ 選手にチェックを入れると打順に追加されます</div>'
+      :lu.map((lp,i)=>{
+        const p=pl.find(x=>x.id===lp.pid);
+        return`<div class="lineup-row"><span class="lu-order">${i+1}</span><span class="lu-name">${p?p.name:'?'}</span><button class="lu-del" onclick="A._luRm('${lp.pid}')">✕</button></div>`;
+      }).join('');
+    const inLu=lu.map(lp=>lp.pid);
+    const pcEl=document.getElementById('player-checkboxes');
+    if(!pl.length){pcEl.innerHTML='<div style="font-size:.78rem;color:var(--gray2)">選手が登録されていません。「選手管理」から追加してください。</div>';return;}
+    pcEl.innerHTML=pl.map(p=>{
+      const checked=inLu.includes(p.id);
+      const ord=checked?lu.findIndex(lp=>lp.pid===p.id)+1:null;
+      return`<div class="pl-sel-row">
+        <label><input type="checkbox" ${checked?'checked':''} onchange="A._luToggle('${p.id}',this.checked)">${p.name}</label>
+        ${ord?`<span style="font-size:.72rem;color:var(--gold);font-family:'Oswald',sans-serif">${ord}番</span>`:''}
+      </div>`;
+    }).join('');
+  },
+  _luToggle(pid,chk){
+    if(chk){if(!this._lu.find(lp=>lp.pid===pid))this._lu.push({pid,atBats:[]});}
+    else this._lu=this._lu.filter(lp=>lp.pid!==pid);
+    this._renderLU();
+  },
+  _luRm(pid){this._lu=this._lu.filter(lp=>lp.pid!==pid);this._renderLU()},
+  createGame(){
+    const team=document.getElementById('ng-team').value.trim();
+    const opp=document.getElementById('ng-opp').value.trim();
+    const date=document.getElementById('ng-date').value;
+    const inn=parseInt(document.getElementById('ng-inn').value);
+    const venue=document.getElementById('ng-venue').value.trim();
+    const side=document.getElementById('ng-side').value;
+    if(!team||!opp){A.toast('チーム名を入力してください');return;}
+    if(!date){A.toast('日付を選択してください');return;}
+    if(!this._lu.length){A.toast('出場選手を1人以上選択してください');return;}
+    const innScores=Array.from({length:inn},(_,i)=>({inn:i+1,away:null,home:null}));
+    const game={
+      id:DB.uid(),team,opp,date,venue,side,inn,
+      lineup:this._lu.map((lp,i)=>({playerId:lp.pid,order:i+1,atBats:[]})),
+      oppLineup:Array.from({length:9},(_,i)=>({order:i+1,atBats:[]})),
+      oppBatterIdx:0,
+      innScores,curInn:1,top:true,fin:false,awayS:0,homeS:0,bases:{b1:null,b2:null,b3:null},outs:0
+    };
+    const games=DB.games();games.push(game);DB.saveGames(games);
+    this.curGameId=game.id;this.sbTab=0;this.nav('scorebook');
+    A.toast('⚾ 試合を開始しました');
+  },
+  _chip(r){
+    const m={'1B':'c1b','2B':'c2b','3B':'c3b','HR':'chr','BB':'cbb','IBB':'cbb','HBP':'chbp','K':'ck','Kc':'ck','GO':'cout','FO':'cout','LO':'cout','DP':'cout','SAC':'csac','SF':'csac','FC':'ce','E':'ce'};
+    return`<div class="chip ${m[r]||'cout'}">${r}</div>`;
+  },
+  _sb(){
+    const g=this.getGame();if(!g)return;
+    const el=document.getElementById('sb-content');
+    const aN=g.side==='away'?g.team:g.opp,hN=g.side==='home'?g.team:g.opp;
+    let hd='<th class="sb-team">チーム</th>',ac='',hc='';
+    for(let i=1;i<=g.inn;i++){
+      const s=g.innScores[i-1],cur=i===g.curInn;
+      // Show 0 for innings already played (past or current), '-' for future innings
+      const isPast=i<g.curInn||(i===g.curInn&&!g.top&&g.fin)||(i<g.curInn)||(g.fin);
+      const awayDone=i<g.curInn||(i===g.curInn&&(!g.top||g.fin))||g.fin;
+      const homeDone=i<g.curInn||g.fin;
+      const awayVal=s?.away!=null?s.away:(awayDone?0:null);
+      const homeVal=s?.home!=null?s.home:(homeDone?0:null);
+      hd+=`<th>${i}</th>`;
+      ac+=`<td class="${cur?'sb-cur':''} ${(awayVal||0)>0?'sb-run':awayVal===0?'sb-zero':''}">${awayVal!=null?awayVal:'<span style="color:rgba(255,255,255,.2)">-</span>'}</td>`;
+      hc+=`<td class="${cur?'sb-cur':''} ${(homeVal||0)>0?'sb-run':homeVal===0?'sb-zero':''}">${homeVal!=null?homeVal:'<span style="color:rgba(255,255,255,.2)">-</span>'}</td>`;
+    }
+    hd+='<th>計</th>';
+    const sbHtml=`<div class="scoreboard"><table class="sb-table"><thead><tr>${hd}</tr></thead><tbody>
+      <tr><td class="sb-team">${aN}</td>${ac}<td class="sb-total">${g.awayS}</td></tr>
+      <tr><td class="sb-team">${hN}</td>${hc}<td class="sb-total">${g.homeS}</td></tr>
+    </tbody></table></div>`;
+    const myAtt=(g.top&&g.side==='away')||(!g.top&&g.side==='home');
+    const pls2=DB.players();
+    const bnm=pid=>{if(!pid||pid==='manual')return'●';const p=pls2.find(x=>x.id===pid);return p?p.name.slice(0,3):'?';};
+    const gb2=g.bases||{b1:null,b2:null,b3:null};
+    const outs2=g.outs||0;
+    const baseDisp=`<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div style="position:relative;width:52px;height:52px">
+        <div style="position:absolute;width:13px;height:13px;border:2px solid ${gb2.b2?'var(--navy)':'rgba(26,58,92,.2)'};background:${gb2.b2?'var(--navy)':'transparent'};transform:rotate(45deg);top:2px;left:19px;border-radius:2px" title="${gb2.b2?bnm(gb2.b2):'二塁'}"></div>
+        <div style="position:absolute;width:13px;height:13px;border:2px solid ${gb2.b3?'var(--navy)':'rgba(26,58,92,.2)'};background:${gb2.b3?'var(--navy)':'transparent'};transform:rotate(45deg);top:20px;left:2px;border-radius:2px" title="${gb2.b3?bnm(gb2.b3):'三塁'}"></div>
+        <div style="position:absolute;width:13px;height:13px;border:2px solid ${gb2.b1?'var(--navy)':'rgba(26,58,92,.2)'};background:${gb2.b1?'var(--navy)':'transparent'};transform:rotate(45deg);top:20px;left:36px;border-radius:2px" title="${gb2.b1?bnm(gb2.b1):'一塁'}"></div>
+      </div>
+      <div>
+        <div style="display:flex;gap:4px">
+          ${[0,1,2].map(i=>`<div style="width:10px;height:10px;border-radius:50%;border:1.5px solid ${i<outs2?'var(--gold-lt)':'var(--border2)'};background:${i<outs2?'var(--gold-lt)':'transparent'}"></div>`).join('')}
+        </div>
+        <div style="font-size:.6rem;color:var(--text2);margin-top:2px;font-weight:700">${outs2}アウト</div>
+      </div>
+    </div>`;
+    const innHtml=g.fin
+      ?`<div class="inn-bar"><span style="color:var(--gray2);font-size:.82rem">試合終了</span><button class="ibtn gold" onclick="A.nav('gamestats')">📊 成績を見る</button></div>`
+      :`<div class="inn-bar"><div class="inn-info"><div class="il">現在</div><div class="iv">${g.curInn}回${g.top?'表':'裏'}</div><div class="it">${myAtt?'🟢 自チーム攻撃中':'⚪ 相手チーム攻撃中'}</div></div>${baseDisp}<button class="next-btn" onclick="A.nextInn()">次へ →</button></div>`;
+    // Auto-select tab: show batting team
+    const myBatting2=(g.top&&g.side==='away')||(!g.top&&g.side==='home');
+    if(!g.fin) this.sbTab=myBatting2?0:1;
+    const tabHtml=`<div class="tab-bar"><button class="tab-btn${this.sbTab===0?' active':''}" onclick="A._setTab(0)">${g.team}</button><button class="tab-btn${this.sbTab===1?' active':''}" onclick="A._setTab(1)">${g.opp}</button></div>`;
+    let rows='';
+    if(this.sbTab===0){
+      const pls=DB.players(),lu=g.lineup||[];
+      if(!lu.length)rows='<div class="empty"><div class="ei">👤</div><p>出場選手が登録されていません</p></div>';
+      else rows=lu.map(lp=>{
+        const p=pls.find(x=>x.id===lp.playerId),nm=p?p.name:'不明';
+        const s=calc(lp.atBats||[]),chips=(lp.atBats||[]).slice(-6).map(a=>this._chip(a.r)).join('');
+        return`<div class="player-row" style="flex-wrap:nowrap">
+          <div onclick="${g.fin?'':'A._openAB(\''+lp.playerId+'\')'}") style="display:flex;align-items:center;gap:9px;flex:1;min-width:0;cursor:${g.fin?'default':'pointer'}">
+            <span class="pr-order">${lp.order}</span>
+            <div style="flex:1;min-width:0"><div class="pr-name">${nm}</div></div>
+            <div class="pr-chips">${chips}</div>
+            <div class="pr-stat"><div class="ps-main">${s.H}/${s.AB}</div><div class="ps-avg">${fmt(s.BA)}</div></div>
+            ${!g.fin?'<span class="pr-add">＋</span>':''}
+          </div>
+          ${!g.fin&&(lp.atBats||[]).length>0?`<button onclick="A._undoAB('${lp.playerId}')" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:var(--red);border-radius:7px;padding:4px 7px;cursor:pointer;font-size:.75rem;margin-left:4px;flex-shrink:0;white-space:nowrap">↩</button>`:''}
+        </div>`;
+      }).join('');
+    }else{
+      // Opponent lineup: numbered batters
+      if(!g.oppLineup)g.oppLineup=Array.from({length:9},(_,i)=>({order:i+1,atBats:[]}));
+      const oppAtt=!((g.top&&g.side==='away')||(!g.top&&g.side==='home'));
+      rows=`<div style="margin-bottom:8px;font-size:.72rem;color:var(--gray2)">相手チームの打席を記録します（打順は打者番号で管理）</div>`+
+        g.oppLineup.map((lu,i)=>{
+          const s=calc(lu.atBats||[]);
+          const chips=(lu.atBats||[]).slice(-6).map(a=>this._chip(a.r)).join('');
+          return`<div class="player-row" style="flex-wrap:nowrap">
+            <div onclick="${g.fin||!oppAtt?'':'A._openOppAB('+i+')'}" style="display:flex;align-items:center;gap:9px;flex:1;min-width:0;cursor:${g.fin||!oppAtt?'default':'pointer'}">
+              <span class="pr-order">${lu.order}</span>
+              <div style="flex:1;min-width:0"><div class="pr-name">${lu.order}番打者</div></div>
+              <div class="pr-chips">${chips}</div>
+              <div class="pr-stat"><div class="ps-main">${s.H}/${s.AB}</div><div class="ps-avg">${fmt(s.BA)}</div></div>
+              ${!g.fin&&oppAtt?'<span class="pr-add">＋</span>':''}
+            </div>
+            ${!g.fin&&oppAtt&&(lu.atBats||[]).length>0?`<button onclick="A._undoOppAB(${i})" style="background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);color:var(--red2);border-radius:7px;padding:4px 7px;cursor:pointer;font-size:.75rem;margin-left:4px;flex-shrink:0">↩</button>`:''}
+          </div>`;
+        }).join('');
+    }
+    const advBtn=!g.fin?`<div style="display:flex;gap:6px;margin-bottom:8px">
+      <button onclick="A._openRunnerEvent(false)" style="flex:1;background:rgba(26,58,92,.1);border:1px solid rgba(26,58,92,.25);color:var(--navy);border-radius:9px;padding:8px;cursor:pointer;font-size:.78rem;font-weight:700">🏃 盗塁 / 進塁</button>
+    </div>`:'';
+    el.innerHTML=`${sbHtml}${innHtml}${advBtn}${tabHtml}<div>${rows}</div>${!g.fin?`<div style="margin-top:10px"><button class="ibtn red" onclick="A.finGame()" style="width:100%;padding:12px;border-radius:9px;font-size:.85rem">🏁 試合を終了する</button></div>`:''}`;
+  },
+  _setTab(n){this.sbTab=n;this._sb()},
+  nextInn(){
+    const g=this.getGame();if(!g||g.fin)return;
+    // Reset bases and outs on half-inning change
+    g.bases={b1:null,b2:null,b3:null};g.outs=0;
+    if(g.top){g.top=false;}
+    else if(g.curInn>=g.inn){this._confirm('試合を終了','最終回が終了しました。試合を終了しますか？',()=>{g.fin=true;this.saveGame(g);this._sb();A.toast('🏁 試合終了');},'終了する');return;}
+    else{g.curInn++;g.top=true;}
+    this.saveGame(g);this._sb();
+  },
+  finGame(){this._confirm('試合を終了',`試合を終了しますか？後からでも成績は確認できます。`,()=>{const g=this.getGame();g.fin=true;this.saveGame(g);this._sb();A.toast('🏁 試合終了');},'終了する')},
+  // ═══════════════════════════════════════════
+  // SITUATION ENGINE
+  // ═══════════════════════════════════════════
+
+  // Returns player name from pid (works for both team and opponent)
+  _pname(pid){
+    if(!pid)return'';
+    if(String(pid).startsWith('opp-'))return(parseInt(pid.split('-')[1])+1)+'番';
+    if(pid==='manual')return'走者';
+    const p=DB.players().find(x=>x.id===pid);
+    return p?p.name:'走者';
+  },
+
+  // Build situation description string
+  _situationText(bases,outs){
+    const on=[];
+    if(bases.b1)on.push('一塁: '+this._pname(bases.b1));
+    if(bases.b2)on.push('二塁: '+this._pname(bases.b2));
+    if(bases.b3)on.push('三塁: '+this._pname(bases.b3));
+    const runners=on.length?on.join('　'):'走者なし';
+    return `${outs}アウト　${runners}`;
+  },
+
+  // Given result + current bases/outs, return array of possible outcomes
+  // Each outcome: {label, newBases, newOuts, scored:[pids], rbi, isDefault}
+  _getOutcomes(result, bases, outs, batterPid){
+    const b1=bases.b1||null, b2=bases.b2||null, b3=bases.b3||null;
+    const pid=batterPid;
+    const outcomes=[];
+
+    const mk=(label,nb,no,scored,isDefault=false)=>{
+      const rbi=scored.length;
+      return{label,newBases:nb,newOuts:no,scored,rbi,isDefault};
+    };
+
+    switch(result){
+      case '1B':
+        outcomes.push(mk('通常の単打（三塁走者生還）',
+          {b1:pid,b2:b1||null,b3:b2||null},outs,b3?[b3]:[],true));
+        if(b1&&b2)outcomes.push(mk('二塁走者も生還',
+          {b1:pid,b2:null,b3:b1||null},outs,[b3,b2].filter(Boolean),false));
+        if(b1)outcomes.push(mk('一塁走者が三塁まで進む',
+          {b1:pid,b2:null,b3:b1},outs,b3?[b3]:[],false));
+        break;
+
+      case '2B':
+        outcomes.push(mk('通常の二塁打',
+          {b1:null,b2:pid,b3:b1||null},outs,[b3,b2].filter(Boolean),true));
+        if(b1)outcomes.push(mk('一塁走者が帰れず（1・2塁→3塁）',
+          {b1:null,b2:pid,b3:b1},outs,[b3].filter(Boolean),false));
+        if(b2)outcomes.push(mk('二塁走者が帰れず（走者2・3塁）',
+          {b1:null,b2:pid,b3:b2},outs,[b3].filter(Boolean),false));
+        outcomes.push(mk('全走者生還',
+          {b1:null,b2:pid,b3:null},outs,[b3,b2,b1].filter(Boolean),false));
+        break;
+
+      case '3B':
+        outcomes.push(mk('通常の三塁打（全走者生還）',
+          {b1:null,b2:null,b3:pid},outs,[b3,b2,b1].filter(Boolean),true));
+        break;
+
+      case 'HR':
+        outcomes.push(mk('本塁打（全員生還）',
+          {b1:null,b2:null,b3:null},outs,[b3,b2,b1,pid].filter(Boolean),true));
+        break;
+
+      case 'BB': case 'HBP': case 'IBB':{
+        const label=result==='BB'?'四球':result==='HBP'?'死球':'故意四球';
+        let nb={b1:pid,b2:b2||null,b3:b3||null};
+        let sc=[];
+        if(b1&&b2&&b3){sc=[b3];nb={b1:pid,b2:b1,b3:b2};}
+        else if(b1&&b2){nb={b1:pid,b2:b1,b3:b2};}
+        else if(b1){nb={b1:pid,b2:b1,b3:b3||null};}
+        else{nb={b1:pid,b2:b2||null,b3:b3||null};}
+        outcomes.push(mk(label+`（打者1塁${sc.length?'・満塁押し出し':''}）`,nb,outs,sc,true));
+        break;
+      }
+
+      case 'E':
+        outcomes.push(mk('エラー出塁（打者1塁、走者1つ進塁）',
+          {b1:pid,b2:b1||null,b3:b2||null},outs,b3?[b3]:[],true));
+        outcomes.push(mk('エラー出塁（走者そのまま）',
+          {b1:pid,b2:b2||null,b3:b3||null},outs,[],false));
+        break;
+
+      case 'GO':{
+        // Most common: batter out. Runners various.
+        if(!b1&&!b2&&!b3){
+          // No runners: simple out
+          outcomes.push(mk('ゴロアウト（走者なし）',
+            {b1:null,b2:null,b3:null},outs+1,[],true));
+        } else if(b1&&!b2&&!b3){
+          // Runner on 1st: most common = force out at 2nd, batter safe at 1st
+          outcomes.push(mk('1塁走者が2塁でアウト、打者1塁へ（フォースアウト）',
+            {b1:pid,b2:null,b3:null},outs+1,[],true));
+          outcomes.push(mk('打者ゴロアウト、1塁走者2塁へ進塁',
+            {b1:null,b2:b1,b3:null},outs+1,[],false));
+          outcomes.push(mk('打者ゴロアウト、走者そのまま',
+            {b1:b1,b2:null,b3:null},outs+1,[],false));
+        } else if(!b1&&b2&&!b3){
+          // Runner on 2nd: no force
+          outcomes.push(mk('打者ゴロアウト、2塁走者そのまま',
+            {b1:null,b2:b2,b3:null},outs+1,[],true));
+          outcomes.push(mk('打者ゴロアウト、2塁走者3塁へ',
+            {b1:null,b2:null,b3:b2},outs+1,[],false));
+        } else if(!b1&&!b2&&b3){
+          // Runner on 3rd: no force
+          outcomes.push(mk('打者ゴロアウト、3塁走者そのまま',
+            {b1:null,b2:null,b3:b3},outs+1,[],true));
+          outcomes.push(mk('打者ゴロアウト、3塁走者生還（スクイズ等）',
+            {b1:null,b2:null,b3:null},outs+1,[b3],false));
+        } else if(b1&&b2&&!b3){
+          // Runners on 1st and 2nd
+          outcomes.push(mk('2塁走者3塁アウト、1塁走者2塁、打者1塁（フォース）',
+            {b1:pid,b2:b1,b3:null},outs+1,[],true));
+          outcomes.push(mk('1塁走者2塁アウト、打者1塁へ',
+            {b1:pid,b2:b2,b3:null},outs+1,[],false));
+          outcomes.push(mk('打者ゴロアウト、走者そのまま',
+            {b1:b1,b2:b2,b3:null},outs+1,[],false));
+        } else if(b1&&!b2&&b3){
+          outcomes.push(mk('1塁走者2塁アウト、打者1塁へ（3塁走者残留）',
+            {b1:pid,b2:null,b3:b3},outs+1,[],true));
+          outcomes.push(mk('1塁走者2塁アウト、打者1塁、3塁走者生還',
+            {b1:pid,b2:null,b3:null},outs+1,[b3],false));
+        } else if(!b1&&b2&&b3){
+          outcomes.push(mk('打者ゴロアウト、2塁走者3塁・3塁走者残留',
+            {b1:null,b2:null,b3:b2},outs+1,[],true));
+          outcomes.push(mk('打者ゴロアウト、3塁走者生還',
+            {b1:null,b2:b2,b3:null},outs+1,[b3],false));
+        } else if(b1&&b2&&b3){
+          // Bases loaded
+          outcomes.push(mk('1塁走者2塁アウト、打者1塁（満塁フォース）',
+            {b1:pid,b2:b2,b3:b3},outs+1,[],true));
+          outcomes.push(mk('3塁走者生還、1塁走者2塁アウト、打者1塁',
+            {b1:pid,b2:b2,b3:null},outs+1,[b3],false));
+        }
+        break;
+      }
+
+      case 'FO':{
+        // Fly out: runners typically hold (unless tag up)
+        const holdBases={b1:b1||null,b2:b2||null,b3:b3||null};
+        outcomes.push(mk('フライアウト（走者ホールド）',holdBases,outs+1,[],true));
+        if(b3)outcomes.push(mk('タッグアップ→3塁走者生還',
+          {b1:b1||null,b2:b2||null,b3:null},outs+1,[b3],false));
+        if(b2)outcomes.push(mk('タッグアップ→2塁走者3塁へ',
+          {b1:b1||null,b2:null,b3:b2},outs+1,[],false));
+        break;
+      }
+
+      case 'LO':
+        outcomes.push(mk('ライナーアウト（走者ホールド）',
+          {b1:b1||null,b2:b2||null,b3:b3||null},outs+1,[],true));
+        break;
+
+      case 'DP':
+        if(b1){
+          outcomes.push(mk('ゲッツー（打者→1塁アウト、1塁走者2塁アウト）',
+            {b1:null,b2:b2||null,b3:b3||null},outs+2,[],true));
+          if(b2)outcomes.push(mk('ゲッツー（1塁走者2塁アウト、2塁走者3塁アウト）',
+            {b1:pid,b2:null,b3:b3||null},outs+2,[],false));
+        } else {
+          outcomes.push(mk('ゲッツー（打者アウト、別の走者もアウト）',
+            {b1:null,b2:b2||null,b3:b3||null},outs+2,[],true));
+        }
+        break;
+
+      case 'SAC':
+        if(b3){
+          outcomes.push(mk('犠打（3塁走者生還、走者1つ進塁）',
+            {b1:null,b2:b1||null,b3:b2||null},outs+1,[b3],true));
+        } else {
+          outcomes.push(mk('犠打（走者1つ進塁）',
+            {b1:null,b2:b1||null,b3:b2||null},outs+1,[],true));
+        }
+        break;
+
+      case 'SF':
+        outcomes.push(mk('犠飛（3塁走者生還）',
+          {b1:b1||null,b2:b2||null,b3:null},outs+1,b3?[b3]:[],true));
+        break;
+
+      case 'FC':
+        outcomes.push(mk('野選（打者1塁、先行走者アウト）',
+          {b1:pid,b2:b2||null,b3:b3||null},outs+1,[],true));
+        if(b3)outcomes.push(mk('野選（打者1塁、3塁走者生還）',
+          {b1:pid,b2:b2||null,b3:null},outs+1,[b3],false));
+        break;
+
+      case 'K': case 'Kc':
+        outcomes.push(mk('三振（走者そのまま）',
+          {b1:b1||null,b2:b2||null,b3:b3||null},outs+1,[],true));
+        break;
+
+      default:
+        outcomes.push(mk('アウト',{b1:b1||null,b2:b2||null,b3:b3||null},outs+1,[],true));
+    }
+    return outcomes;
+  },
+
+  // ═══════════════════════════════════════════
+  // AT-BAT MODAL (Step 1: pick result)
+  // ═══════════════════════════════════════════
+  _openAB(pid){
+    const g=this.getGame();if(!g||g.fin)return;
+    const lp=g.lineup.find(x=>x.playerId===pid),p=DB.players().find(x=>x.id===pid);
+    if(!lp||!p)return;
+    const s=calc(lp.atBats||[]);
+    const bases=g.bases||{b1:null,b2:null,b3:null};
+    const outs=g.outs||0;
+
+    // Build runner display
+    const runnerRows=this._runnerDisplayRows(bases);
+
+    const defs=[
+      {sym:'1B',lbl:'単打',c:'rhit'},{sym:'2B',lbl:'二塁打',c:'rhit'},{sym:'3B',lbl:'三塁打',c:'rhit'},{sym:'HR',lbl:'本塁打',c:'rhit'},
+      {sym:'BB',lbl:'四球',c:'rwalk'},{sym:'HBP',lbl:'死球',c:'rwalk'},{sym:'IBB',lbl:'故意四球',c:'rwalk'},{sym:'E',lbl:'エラー',c:'rwalk'},
+      {sym:'K',lbl:'振り三振',c:'rk'},{sym:'Kc',lbl:'見逃三振',c:'rk'},
+      {sym:'GO',lbl:'ゴロ',c:'rout'},{sym:'FO',lbl:'フライ',c:'rout'},{sym:'LO',lbl:'ライナー',c:'rout'},{sym:'DP',lbl:'ゲッツー',c:'rout'},
+      {sym:'SAC',lbl:'犠打',c:'rout'},{sym:'SF',lbl:'犠飛',c:'rout'},{sym:'FC',lbl:'野選',c:'rout'}
+    ];
+    const secs=[
+      {t:'安打',lc:'#2563eb',it:defs.slice(0,4)},{t:'四死球・出塁',lc:'#16a34a',it:defs.slice(4,8)},
+      {t:'三振',lc:'#7c3aed',it:defs.slice(8,10)},{t:'アウト',lc:'#9ca3af',it:defs.slice(10)}
+    ];
+    const hist=(lp.atBats||[]).slice(-3);
+
+    const m=document.createElement('div');m.className='overlay';m.id='ab-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd">
+        <div>
+          <div class="mtitle">打席記録</div>
+          <div class="msub">${lp.order}番 ${p.name}｜${s.AB}打数${s.H}安打　打率${(s.BA).toFixed(3).replace(/^0/,'')}</div>
+        </div>
+        <button class="xbtn" onclick="A._closeM()">✕</button>
+      </div>
+
+      <!-- SITUATION -->
+      <div style="background:rgba(26,58,92,.08);border:1.5px solid rgba(26,58,92,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:.68rem;color:var(--navy);font-weight:700;margin-bottom:6px">📍 現在の状況</div>
+        <div style="font-size:.75rem;color:var(--text);font-weight:700;margin-bottom:6px">${outs}アウト</div>
+        ${runnerRows||'<div style="font-size:.75rem;color:var(--text2)">走者なし</div>'}
+        ${hist.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span style="font-size:.6rem;color:var(--text3)">直近: </span>${hist.map(a=>this._chip(a.r)).join('')}</div>`:''}
+      </div>
+
+      <!-- RESULT BUTTONS -->
+      ${secs.map(s=>`<div class="rs-sec"><div class="rs-label" style="--lc:${s.lc}">${s.t}</div><div class="rg">${s.it.map(r=>`<button class="rbtn ${r.c}" onclick="A._pickResult('${pid}','${r.sym}')"><span class="rsym">${r.sym}</span><span class="rlbl">${r.lbl}</span></button>`).join('')}</div></div>`).join('')}
+
+      <input class="memo-input" id="ab-memo" placeholder="メモ（任意）" style="margin-top:6px">
+      ${(lp.atBats||[]).length>0?`<button class="undo-btn" onclick="A._undoAB('${pid}')">↩ 最後の打席を取り消す</button>`:''}
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);
+  },
+
+  // Build runner rows HTML (name tags on bases)
+  _runnerDisplayRows(bases){
+    const rows=[];
+    const baseNames={b3:'三塁',b2:'二塁',b1:'一塁'};
+    ['b3','b2','b1'].forEach(b=>{
+      if(bases[b]){
+        const nm=this._pname(bases[b]);
+        rows.push(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:.65rem;color:var(--text3);width:26px">${baseNames[b]}</span>
+          <span style="background:var(--navy);color:#fff;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:700">${nm}</span>
+        </div>`);
+      }
+    });
+    return rows.join('');
+  },
+
+  // ═══════════════════════════════════════════
+  // STEP 2: Show outcome options after result picked
+  // ═══════════════════════════════════════════
+  _pickResult(pid, result){
+    const g=this.getGame();if(!g)return;
+    const bases=g.bases||{b1:null,b2:null,b3:null};
+    const outs=g.outs||0;
+    const memo=document.getElementById('ab-memo')?.value||'';
+
+    const outcomes=this._getOutcomes(result, bases, outs, pid);
+
+    // If only one outcome (or auto-confirm for simple cases), go straight
+    if(outcomes.length===1){
+      this._commitAB(pid, result, outcomes[0], memo);
+      return;
+    }
+
+    // Show outcome picker
+    const p=DB.players().find(x=>x.id===pid);
+    const lp=g.lineup.find(x=>x.playerId===pid);
+
+    // Build outcome option rows
+    const optRows=outcomes.map((oc,i)=>{
+      // Build mini base state for this outcome
+      const miniDiamond=this._miniDiamond(oc.newBases);
+      const scored=oc.scored.length>0?`<span style="color:var(--green2);font-weight:700;font-size:.68rem"> ＋${oc.scored.length}点</span>`:'';
+      const outsTxt=oc.newOuts>=3?'⚾3アウト':`${oc.newOuts}アウト`;
+      return`<button onclick="A._commitAB('${pid}','${result}',A._outcomes[${i}],'${memo.replace(/'/g,"")}')"
+        style="width:100%;text-align:left;background:${oc.isDefault?'rgba(26,58,92,.08)':'var(--bg3)'};border:${oc.isDefault?'2px solid var(--navy)':'1px solid var(--border)'};border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:4px">${oc.label}${scored}</div>
+          <div style="font-size:.65rem;color:var(--text2)">${outsTxt}</div>
+        </div>
+        <div style="flex-shrink:0">${miniDiamond}</div>
+      </button>`;
+    }).join('');
+
+    // Store outcomes on A for the button callbacks
+    this._outcomes=outcomes;
+    this._closeM();
+
+    const m=document.createElement('div');m.className='overlay';m.id='ab-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd">
+        <div>
+          <div class="mtitle">${result} — 結果を選択</div>
+          <div class="msub">${lp?lp.order+'番 ':''} ${p?p.name:''}</div>
+        </div>
+        <button class="xbtn" onclick="A._closeM()">✕</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text2);margin-bottom:10px">実際の状況に合うものを選んでください。最初の選択肢が最もよくあるケースです。</div>
+      ${optRows}
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);
+  },
+
+  // Mini diamond HTML for outcome display
+  _miniDiamond(bases){
+    const sq=(on)=>`<div style="width:11px;height:11px;background:${on?'var(--navy)':'transparent'};border:1.5px solid ${on?'var(--navy)':'var(--border2)'};border-radius:2px;transform:rotate(45deg)"></div>`;
+    return`<div style="position:relative;width:38px;height:38px;flex-shrink:0">
+      <div style="position:absolute;top:2px;left:12px">${sq(!!bases.b2)}</div>
+      <div style="position:absolute;top:13px;left:1px">${sq(!!bases.b3)}</div>
+      <div style="position:absolute;top:13px;right:1px">${sq(!!bases.b1)}</div>
+    </div>`;
+  },
+
+  // ═══════════════════════════════════════════
+  // COMMIT: Apply the chosen outcome
+  // ═══════════════════════════════════════════
+  _commitAB(pid, result, outcome, memo){
+    const g=this.getGame();if(!g)return;
+    if(!g.bases)g.bases={b1:null,b2:null,b3:null};
+    if(g.outs===undefined)g.outs=0;
+
+    const {newBases, newOuts, scored, rbi}=outcome;
+    const runsScored=scored.length;
+
+    const ab={r:result, rbi, runs:runsScored,
+      memo:memo||'',
+      inn:g.curInn,
+      basesSnapshot:{b1:g.bases.b1,b2:g.bases.b2,b3:g.bases.b3},
+      outsSnapshot:g.outs,
+      scored:[...scored]};
+
+    const li=g.lineup.findIndex(x=>x.playerId===pid);
+    if(li>=0) g.lineup[li].atBats=(g.lineup[li].atBats||[]).concat(ab);
+
+    // Credit runs to scorers
+    scored.forEach(scorerPid=>{
+      if(scorerPid===pid){
+        if(li>=0&&g.lineup[li].atBats.length>0)
+          g.lineup[li].atBats[g.lineup[li].atBats.length-1].runs=1;
+      } else {
+        const sli=g.lineup.findIndex(x=>x.playerId===scorerPid);
+        if(sli>=0&&g.lineup[sli].atBats.length>0)
+          g.lineup[sli].atBats[g.lineup[sli].atBats.length-1].runs=(g.lineup[sli].atBats[g.lineup[sli].atBats.length-1].runs||0)+1;
+      }
+    });
+
+    // Capture state BEFORE advancing
+    const myTeamBatting=(g.top&&g.side==='away')||(!g.top&&g.side==='home');
+    const scoringInn=g.curInn;
+
+    // Apply base/out state
+    g.bases=newBases;
+    const innOver=(newOuts>=3);
+    g.outs=innOver?0:newOuts;
+    if(innOver)g.bases={b1:null,b2:null,b3:null};
+
+    // Update score
+    if(runsScored>0){
+      if(!g.innScores)g.innScores=[];
+      let entry=g.innScores.find(s=>s.inn===scoringInn);
+      if(!entry){entry={inn:scoringInn,away:null,home:null};g.innScores.push(entry);}
+      if(myTeamBatting){
+        if(g.side==='away') entry.away=(entry.away||0)+runsScored;
+        else entry.home=(entry.home||0)+runsScored;
+      }
+      this.recalc(g);
+    }
+
+    // Auto advance half-inning
+    if(innOver){
+      if(g.top){g.top=false;}
+      else if(g.curInn>=g.inn){g.fin=true;}
+      else{g.curInn++;g.top=true;}
+    }
+
+    this.saveGame(g);
+    this._closeM();
+    this._sb();
+
+    let msg=`✅ ${result} を記録`;
+    if(rbi>0) msg+=` 打点${rbi}`;
+    if(runsScored>0) msg+=` 得点${runsScored}`;
+    if(innOver){
+      const side=g.fin?'試合終了':((g.top&&g.side==='away')||(!g.top&&g.side==='home'))?g.team+'の攻撃':g.opp+'の攻撃';
+      setTimeout(()=>A.toast('⚾ 3アウト！ → '+side),300);
+    } else {
+      A.toast(msg);
+    }
+  },
+
+  _undoAB(pid){
+    this._closeM();
+    const g=this.getGame();
+    const li=g.lineup.findIndex(x=>x.playerId===pid);
+    if(li>=0&&g.lineup[li].atBats.length>0){
+      const removed=g.lineup[li].atBats.slice(-1)[0];
+      if(removed.basesSnapshot!==undefined) g.bases=removed.basesSnapshot;
+      if(removed.outsSnapshot!==undefined) g.outs=removed.outsSnapshot;
+      g.lineup[li].atBats=g.lineup[li].atBats.slice(0,-1);
+      if(removed.rbi>0){
+        const inn=removed.inn||g.curInn;
+        const entry=g.innScores?.find(s=>s.inn===inn);
+        if(entry){
+          const side=g.side==='away'?'away':'home';
+          const myBatt=(removed.basesSnapshot?((g.top&&g.side==='away')||(!g.top&&g.side==='home')):true);
+          if(myBatt) entry[side]=Math.max(0,(entry[side]||0)-removed.rbi);
+        }
+        (removed.scored||[]).forEach(scorerPid=>{
+          if(scorerPid!==pid){
+            const sli=g.lineup.findIndex(x=>x.playerId===scorerPid);
+            if(sli>=0&&g.lineup[sli].atBats.length>0){
+              const ab=g.lineup[sli].atBats[g.lineup[sli].atBats.length-1];
+              ab.runs=Math.max(0,(ab.runs||0)-1);
+            }
+          }
+        });
+        this.recalc(g);
+      }
+      this.saveGame(g);this._sb();
+      A.toast('↩ '+removed.r+' を取り消しました');
+    } else {
+      this._sb();
+      A.toast('取り消せる打席がありません');
+    }
+  },
+
+  _openOppAB(idx){
+    const g=this.getGame();if(!g||g.fin)return;
+    if(!g.oppLineup)g.oppLineup=Array.from({length:9},(_,i)=>({order:i+1,atBats:[]}));
+    const lu=g.oppLineup[idx];
+    const bases=g.bases||{b1:null,b2:null,b3:null};
+    const outs=g.outs||0;
+    const s=calc(lu.atBats||[]);
+    const runnerRows=this._runnerDisplayRows(bases);
+    const pid='opp-'+idx;
+
+    const defs=[
+      {sym:'1B',lbl:'単打',c:'rhit'},{sym:'2B',lbl:'二塁打',c:'rhit'},{sym:'3B',lbl:'三塁打',c:'rhit'},{sym:'HR',lbl:'本塁打',c:'rhit'},
+      {sym:'BB',lbl:'四球',c:'rwalk'},{sym:'HBP',lbl:'死球',c:'rwalk'},{sym:'IBB',lbl:'故意四球',c:'rwalk'},{sym:'E',lbl:'エラー',c:'rwalk'},
+      {sym:'K',lbl:'振り三振',c:'rk'},{sym:'Kc',lbl:'見逃三振',c:'rk'},
+      {sym:'GO',lbl:'ゴロ',c:'rout'},{sym:'FO',lbl:'フライ',c:'rout'},{sym:'LO',lbl:'ライナー',c:'rout'},{sym:'DP',lbl:'ゲッツー',c:'rout'},
+      {sym:'SAC',lbl:'犠打',c:'rout'},{sym:'SF',lbl:'犠飛',c:'rout'},{sym:'FC',lbl:'野選',c:'rout'}
+    ];
+    const secs=[
+      {t:'安打',lc:'#2563eb',it:defs.slice(0,4)},{t:'四死球・出塁',lc:'#16a34a',it:defs.slice(4,8)},
+      {t:'三振',lc:'#7c3aed',it:defs.slice(8,10)},{t:'アウト',lc:'#9ca3af',it:defs.slice(10)}
+    ];
+    const hist=(lu.atBats||[]).slice(-3);
+
+    const m=document.createElement('div');m.className='overlay';m.id='ab-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd">
+        <div>
+          <div class="mtitle">打席記録（相手）</div>
+          <div class="msub">${lu.order}番打者｜${s.AB}打数${s.H}安打</div>
+        </div>
+        <button class="xbtn" onclick="A._closeM()">✕</button>
+      </div>
+      <div style="background:rgba(26,58,92,.08);border:1.5px solid rgba(26,58,92,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:.68rem;color:var(--navy);font-weight:700;margin-bottom:6px">📍 現在の状況</div>
+        <div style="font-size:.75rem;color:var(--text);font-weight:700;margin-bottom:6px">${outs}アウト</div>
+        ${runnerRows||'<div style="font-size:.75rem;color:var(--text2)">走者なし</div>'}
+        ${hist.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span style="font-size:.6rem;color:var(--text3)">直近: </span>${hist.map(a=>this._chip(a.r)).join('')}</div>`:''}
+      </div>
+      ${secs.map(s=>`<div class="rs-sec"><div class="rs-label" style="--lc:${s.lc}">${s.t}</div><div class="rg">${s.it.map(r=>`<button class="rbtn ${r.c}" onclick="A._pickOppResult(${idx},'${r.sym}')"><span class="rsym">${r.sym}</span><span class="rlbl">${r.lbl}</span></button>`).join('')}</div></div>`).join('')}
+      <input class="memo-input" id="ab-memo" placeholder="メモ（任意）" style="margin-top:6px">
+      ${(lu.atBats||[]).length>0?`<button class="undo-btn" onclick="A._undoOppAB(${idx})">↩ 最後の打席を取り消す</button>`:''}
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);
+  },
+
+  _pickOppResult(idx, result){
+    const g=this.getGame();if(!g)return;
+    const bases=g.bases||{b1:null,b2:null,b3:null};
+    const outs=g.outs||0;
+    const pid='opp-'+idx;
+    const memo=document.getElementById('ab-memo')?.value||'';
+    const outcomes=this._getOutcomes(result, bases, outs, pid);
+
+    if(outcomes.length===1){
+      this._commitOppAB(idx, result, outcomes[0], memo);
+      return;
+    }
+
+    this._outcomes=outcomes;
+    this._closeM();
+
+    const optRows=outcomes.map((oc,i)=>{
+      const miniDiamond=this._miniDiamond(oc.newBases);
+      const scored=oc.scored.length>0?`<span style="color:var(--red);font-weight:700;font-size:.68rem"> ＋${oc.scored.length}点（相手）</span>`:'';
+      const outsTxt=oc.newOuts>=3?'⚾3アウト':`${oc.newOuts}アウト`;
+      return`<button onclick="A._commitOppAB(${idx},'${result}',A._outcomes[${i}],'${memo.replace(/'/g,"")}')"
+        style="width:100%;text-align:left;background:${oc.isDefault?'rgba(26,58,92,.08)':'var(--bg3)'};border:${oc.isDefault?'2px solid var(--navy)':'1px solid var(--border)'};border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:4px">${oc.label}${scored}</div>
+          <div style="font-size:.65rem;color:var(--text2)">${outsTxt}</div>
+        </div>
+        <div style="flex-shrink:0">${miniDiamond}</div>
+      </button>`;
+    }).join('');
+
+    const m=document.createElement('div');m.className='overlay';m.id='ab-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd">
+        <div><div class="mtitle">${result} — 結果を選択（相手）</div><div class="msub">${idx+1}番打者</div></div>
+        <button class="xbtn" onclick="A._closeM()">✕</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text2);margin-bottom:10px">実際の状況に合うものを選んでください。</div>
+      ${optRows}
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);
+  },
+
+  _commitOppAB(idx, result, outcome, memo){
+    const g=this.getGame();if(!g)return;
+    if(!g.oppLineup)g.oppLineup=Array.from({length:9},(_,i)=>({order:i+1,atBats:[]}));
+    if(!g.bases)g.bases={b1:null,b2:null,b3:null};
+    if(g.outs===undefined)g.outs=0;
+
+    const {newBases, newOuts, scored, rbi}=outcome;
+    const runsScored=scored.length;
+
+    const ab={r:result,rbi,runs:runsScored,memo:memo||'',inn:g.curInn,
+      basesSnapshot:{b1:g.bases.b1,b2:g.bases.b2,b3:g.bases.b3},
+      outsSnapshot:g.outs,scored:[...scored]};
+    g.oppLineup[idx].atBats=(g.oppLineup[idx].atBats||[]).concat(ab);
+
+    const scoringInn=g.curInn;
+    g.bases=newBases;
+    const innOver=(newOuts>=3);
+    g.outs=innOver?0:newOuts;
+    if(innOver)g.bases={b1:null,b2:null,b3:null};
+
+    if(runsScored>0){
+      if(!g.innScores)g.innScores=[];
+      let entry=g.innScores.find(s=>s.inn===scoringInn);
+      if(!entry){entry={inn:scoringInn,away:null,home:null};g.innScores.push(entry);}
+      const oppSide=g.side==='away'?'home':'away';
+      entry[oppSide]=(entry[oppSide]||0)+runsScored;
+      this.recalc(g);
+    }
+
+    if(innOver){
+      if(g.top){g.top=false;}
+      else if(g.curInn>=g.inn){g.fin=true;}
+      else{g.curInn++;g.top=true;}
+    }
+
+    this.saveGame(g);
+    this._closeM();
+    this._sb();
+
+    let msg=`✅ ${result} を記録（相手）`;
+    if(runsScored>0) msg+=` 相手得点${runsScored}`;
+    if(innOver){
+      const side=g.fin?'試合終了':((g.top&&g.side==='away')||(!g.top&&g.side==='home'))?g.team+'の攻撃':g.opp+'の攻撃';
+      setTimeout(()=>A.toast('⚾ 3アウト！ → '+side),300);
+    } else {
+      A.toast(msg);
+    }
+  },
+
+  _undoOppAB(idx){
+    this._closeM();
+    const g=this.getGame();
+    if(!g.oppLineup)return;
+    const lu=g.oppLineup[idx];
+    if(lu&&lu.atBats&&lu.atBats.length>0){
+      const removed=lu.atBats.slice(-1)[0];
+      if(removed.basesSnapshot!==undefined)g.bases=removed.basesSnapshot;
+      if(removed.outsSnapshot!==undefined)g.outs=removed.outsSnapshot;
+      lu.atBats=lu.atBats.slice(0,-1);
+      if(removed.rbi>0){
+        const entry=g.innScores?.find(s=>s.inn===(removed.inn||g.curInn));
+        if(entry){
+          const oppSide=g.side==='away'?'home':'away';
+          entry[oppSide]=Math.max(0,(entry[oppSide]||0)-removed.rbi);
+          this.recalc(g);
+        }
+      }
+      this.saveGame(g);this._sb();
+      A.toast('↩ '+removed.r+' を取り消しました');
+    }else{
+      this._sb();
+      A.toast('取り消せる打席がありません');
+    }
+  },
+
+  // Runner advance (steal / passball) - remains same
+  _openRunnerEvent(isOpp){
+    const g=this.getGame();if(!g||g.fin)return;
+    const bases=g.bases||{b1:null,b2:null,b3:null};
+    const runners=[];
+    if(bases.b1)runners.push({base:'b1',label:'一塁: '+this._pname(bases.b1),pid:bases.b1});
+    if(bases.b2)runners.push({base:'b2',label:'二塁: '+this._pname(bases.b2),pid:bases.b2});
+    if(bases.b3)runners.push({base:'b3',label:'三塁: '+this._pname(bases.b3),pid:bases.b3});
+    const advOpts={b1:[{to:'b2',label:'一塁→二塁'},{to:'score',label:'一塁→本塁'}],
+                   b2:[{to:'b3',label:'二塁→三塁'},{to:'score',label:'二塁→本塁'}],
+                   b3:[{to:'score',label:'三塁→本塁'}]};
+    let runnerRows='';
+    if(!runners.length){
+      runnerRows='<div style="color:var(--text2);font-size:.82rem;padding:10px 0">現在塁上に走者がいません</div>';
+    }else{
+      runnerRows=runners.map(r=>{
+        const opts=advOpts[r.base]||[];
+        return`<div style="border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px">
+          <div style="font-size:.78rem;font-weight:700;margin-bottom:6px;color:var(--text)">${r.label}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${opts.map(o=>`
+              <button onclick="A._doSteal('${r.base}','${o.to}','${r.pid}',false,${isOpp})" style="background:rgba(26,58,92,.1);border:1.5px solid var(--navy);color:var(--navy);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:.75rem;font-weight:700">🏃 盗塁: ${o.label}</button>
+              <button onclick="A._doSteal('${r.base}','${o.to}','${r.pid}',true,${isOpp})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:.75rem">⚠️ パスボール/暴投: ${o.label}</button>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    const m=document.createElement('div');m.className='overlay';m.id='ab-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd">
+        <div><div class="mtitle">走者の進塁</div><div class="msub">盗塁 / パスボール・暴投</div></div>
+        <button class="xbtn" onclick="A._closeM()">✕</button>
+      </div>
+      <div style="font-size:.7rem;color:var(--text2);margin-bottom:10px;padding:6px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+        🏃 <strong style="color:var(--navy)">盗塁</strong> = 個人成績にカウントされます<br>
+        ⚠️ <strong>パスボール/暴投</strong> = 進塁のみ（個人成績なし）
+      </div>
+      ${runnerRows}
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);
+  },
+
+  _doSteal(fromBase,toBase,pid,isPassball,isOpp){
+    const g=this.getGame();if(!g)return;
+    if(!g.bases)g.bases={b1:null,b2:null,b3:null};
+    const scored=(toBase==='score');
+    g.bases[fromBase]=null;
+    if(!scored)g.bases[toBase]=pid;
+    if(scored){
+      if(!g.innScores)g.innScores=[];
+      let entry=g.innScores.find(s=>s.inn===g.curInn);
+      if(!entry){entry={inn:g.curInn,away:null,home:null};g.innScores.push(entry);}
+      const myBatting=(g.top&&g.side==='away')||(!g.top&&g.side==='home');
+      if(isOpp){const os=g.side==='away'?'home':'away';entry[os]=(entry[os]||0)+1;}
+      else if(myBatting){const ms=g.side==='away'?'away':'home';entry[ms]=(entry[ms]||0)+1;
+        if(!String(pid).startsWith('opp-')&&pid!=='manual'){
+          const li=g.lineup.findIndex(x=>x.playerId===pid);
+          if(li>=0&&g.lineup[li].atBats.length>0)
+            g.lineup[li].atBats[g.lineup[li].atBats.length-1].runs=(g.lineup[li].atBats[g.lineup[li].atBats.length-1].runs||0)+1;
+        }
+      }
+      this.recalc(g);
+    }
+    if(!isPassball&&!String(pid).startsWith('opp-')&&pid!=='manual'){
+      const li=g.lineup.findIndex(x=>x.playerId===pid);
+      if(li>=0&&g.lineup[li].atBats.length>0){
+        const ab=g.lineup[li].atBats[g.lineup[li].atBats.length-1];
+        ab.sb=(ab.sb||0)+1;
+      }
+    }
+    this.saveGame(g);this._closeM();this._sb();
+    const bl={b1:'一塁',b2:'二塁',b3:'三塁',score:'本塁'}[toBase];
+    A.toast(`✅ ${isPassball?'パスボール/暴投':'盗塁'}: ${bl}へ進塁${scored?' → 得点！':''}`);
+  },
+
+  _closeM(){['ab-modal','inn-modal','baseadj-modal'].forEach(id=>{const m=document.getElementById(id);if(m)m.remove()})},
+  _openInn(){
+    const g=this.getGame();if(!g)return;
+    const aN=g.side==='away'?g.team:g.opp,hN=g.side==='home'?g.team:g.opp;
+    let ib='';for(let i=1;i<=g.inn;i++)ib+=`<button class="inn-sel${i===g.curInn?' active':''}" id="isb-${i}" onclick="A._selInn(${i})">${i}</button>`;
+    const m=document.createElement('div');m.className='overlay';m.id='inn-modal';
+    m.innerHTML=`<div class="sheet">
+      <div class="mhd"><div class="mtitle">🏟 イニング得点入力</div><button class="xbtn" onclick="A._closeM()">✕</button></div>
+      <div class="inn-grid">${ib}</div>
+      <div class="sc-row">
+        <div class="sc-team"><div class="sc-name">${aN}（先攻）</div><div class="sc-ctrl"><button class="sc-btn" onclick="A._scD('away',-1)">−</button><span class="sc-v" id="sv-away">0</span><button class="sc-btn" onclick="A._scD('away',1)">＋</button></div></div>
+        <span style="color:var(--gray)">VS</span>
+        <div class="sc-team"><div class="sc-name">${hN}（後攻）</div><div class="sc-ctrl"><button class="sc-btn" onclick="A._scD('home',-1)">−</button><span class="sc-v" id="sv-home">0</span><button class="sc-btn" onclick="A._scD('home',1)">＋</button></div></div>
+      </div>
+      <button class="sbtn" onclick="A._saveInn()">✅ 保存</button>
+    </div>`;
+    m.addEventListener('click',e=>{if(e.target===m)this._closeM()});
+    document.body.appendChild(m);this._eInn=g.curInn;this._updID();
+  },
+  _selInn(n){this._eInn=n;document.querySelectorAll('.inn-sel').forEach(b=>b.classList.remove('active'));document.getElementById('isb-'+n)?.classList.add('active');this._updID()},
+  _updID(){const g=this.getGame(),s=g.innScores[this._eInn-1];document.getElementById('sv-away').textContent=s?.away||0;document.getElementById('sv-home').textContent=s?.home||0},
+  _scD(side,d){const el=document.getElementById('sv-'+side);if(el)el.textContent=Math.max(0,(parseInt(el.textContent)||0)+d)},
+  _saveInn(){
+    const g=this.getGame();
+    const a=parseInt(document.getElementById('sv-away').textContent)||0,h=parseInt(document.getElementById('sv-home').textContent)||0;
+    g.innScores[this._eInn-1]={inn:this._eInn,away:a,home:h};
+    this.recalc(g);this.saveGame(g);this._closeM();this._sb();A.toast('✅ 得点を保存しました');
+  },
+  _stblHd(){return`<thead><tr><th>選手</th><th>打席</th><th>打数</th><th>安打</th><th>打率</th><th>出塁率</th><th>長打率</th><th>OPS</th><th>打点</th><th>得点</th><th>本塁打</th><th>2B</th><th>3B</th><th>三振</th><th>四球</th><th>死球</th><th>犠打</th><th>犠飛</th><th>盗塁</th></tr></thead>`},
+  _stblRow(name,s){return`<tr><td>${name}</td><td>${s.PA}</td><td>${s.AB}</td><td>${s.H}</td><td class="${s.BA>=.3?'hi':''}">${fmt(s.BA)}</td><td class="${s.OBP>=.35?'hi':''}">${fmt(s.OBP)}</td><td>${fmt(s.SLG)}</td><td class="${s.OPS>=.8?'hi':''}">${fmt(s.OPS)}</td><td class="${s.RBI>=3?'hi':''}">${s.RBI}</td><td>${s.R}</td><td class="${s.HR>0?'hi':''}">${s.HR}</td><td>${s.D2}</td><td>${s.D3}</td><td class="${s.K>=3?'wa':''}">${s.K}</td><td>${s.BB}</td><td>${s.HBP}</td><td>${s.SAC}</td><td>${s.SF}</td><td class="${s.SB>=3?'hi':''}">${s.SB}</td></tr>`},
+  _gStats(){
+    const g=this.getGame();if(!g)return;
+    const pls=DB.players(),el=document.getElementById('gs-content');
+    const myS=g.side==='away'?g.awayS:g.homeS,opS=g.side==='away'?g.homeS:g.awayS;
+    const rows=(g.lineup||[]).map(lp=>{
+      const p=pls.find(x=>x.id===lp.playerId);
+      return this._stblRow(`${lp.order}番 ${p?p.name:'不明'}`,calc(lp.atBats||[]));
+    }).join('');
+    const totAbs=(g.lineup||[]).flatMap(lp=>lp.atBats||[]);
+    const ts=calc(totAbs);
+    const totRow=`<tr class="tot"><td>チーム合計</td><td>${ts.PA}</td><td>${ts.AB}</td><td>${ts.H}</td><td>${fmt(ts.BA)}</td><td>-</td><td>-</td><td>-</td><td>${ts.RBI}</td><td>${ts.R}</td><td>${ts.HR}</td><td>${ts.D2}</td><td>${ts.D3}</td><td>${ts.K}</td><td>${ts.BB}</td><td>${ts.HBP}</td><td>${ts.SAC}</td><td>${ts.SF}</td><td>${ts.SB}</td></tr>`;
+    el.innerHTML=`
+      <div class="card" style="margin-bottom:10px">
+        <div style="font-size:.68rem;color:var(--gray2);margin-bottom:6px">📅 ${g.date}${g.venue?' 📍'+g.venue:''}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:14px">
+          <div style="text-align:center"><div style="font-size:.82rem;font-weight:700">${g.team}</div><div style="font-family:'Oswald',sans-serif;font-size:2.2rem;color:var(--gold)">${myS}</div></div>
+          <span style="color:var(--text3);font-size:1.1rem">−</span>
+          <div style="text-align:center"><div style="font-size:.82rem;font-weight:700">${g.opp}</div><div style="font-family:'Oswald',sans-serif;font-size:2.2rem;color:var(--gold)">${opS}</div></div>
+        </div>
+        <div style="text-align:center;font-size:.68rem;color:${g.fin?'var(--text3)':'var(--green2)'}">
+          ${g.fin?'試合終了':'記録中 '+g.curInn+'回'+(g.top?'表':'裏')}
+        </div>
+      </div>
+      <div class="sec-title">この試合の打撃成績</div>
+      <div style="font-size:.65rem;color:var(--gray2);margin-bottom:5px">← 横にスクロール</div>
+      <div class="stats-scroll"><table class="stbl">${this._stblHd()}<tbody>${rows}${totRow}</tbody></table></div>
+      <div style="margin-top:11px;font-size:.67rem;color:var(--gray2);line-height:1.9"><strong style="color:var(--gold)">指標</strong><br>打率=安打÷打数　出塁率=(安打+四球+死球)÷(打数+四球+死球+犠飛)<br>長打率=塁打数÷打数　OPS=出塁率+長打率</div>`;
+  },
+  _allStats(){
+    const pls=DB.players(),el=document.getElementById('all-stats-content');
+    if(!pls.length){el.innerHTML='<div class="empty"><div class="ei">📊</div><p>選手が登録されていません</p></div>';return;}
+    const withData=pls.filter(p=>allAtBats(p.id).length>0);
+    if(!withData.length){el.innerHTML='<div class="empty"><div class="ei">📊</div><p>まだ打席記録がありません<br>試合でスコアを記録すると<br>ここに通算成績が表示されます</p></div>';return;}
+    // Build stats array
+    const statsArr=withData.map(p=>({name:p.name,...calc(allAtBats(p.id))}));
+    // Sort
+    const sk=this._sortKey||'PA',sd=this._sortDir!==false;
+    statsArr.sort((a,b)=>sd?(b[sk]||0)-(a[sk]||0):(a[sk]||0)-(b[sk]||0));
+    // Compute per-column max for rank highlight (only players with AB>0 for rate stats)
+    const rankCols=['PA','AB','H','BA','OBP','SLG','OPS','RBI','R','HR','D2','D3','K','BB','HBP','SAC','SF','SB'];
+    const maxVal={};
+    rankCols.forEach(col=>{
+      const vals=statsArr.map(s=>s[col]||0).filter(v=>v>0);
+      maxVal[col]=vals.length?Math.max(...vals):null;
+    });
+    // Sort bar buttons
+    const sortCols=[
+      {k:'PA',l:'打席'},
+      {k:'AB',l:'打数'},
+      {k:'H',l:'安打'},
+      {k:'BA',l:'打率'},
+      {k:'OBP',l:'出塁率'},
+      {k:'SLG',l:'長打率'},
+      {k:'OPS',l:'OPS'},
+      {k:'RBI',l:'打点'},
+      {k:'R',l:'得点'},
+      {k:'HR',l:'本塁打'},
+      {k:'D2',l:'二塁打'},
+      {k:'D3',l:'三塁打'},
+      {k:'K',l:'三振'},
+      {k:'BB',l:'四球'},
+      {k:'HBP',l:'死球'},
+      {k:'TB',l:'塁打数'},
+      {k:'SB',l:'盗塁'},
+    ];
+    const sortBar=`<div id="sort-bar" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding:8px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+      <span style="font-size:.65rem;color:var(--gray2);width:100%;margin-bottom:2px">並び替え（タップで昇順/降順切替）</span>
+      ${sortCols.map(c=>{
+        const active=this._sortKey===c.k;
+        const arrow=active?(sd?'↓':'↑'):'';
+        return`<button onclick="A._sortStats('${c.k}')" style="background:${active?'var(--navy)':'var(--bg3)'};color:${active?'#fff':'var(--text2)'};border:1px solid ${active?'var(--navy)':'var(--border)'};border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.7rem;font-family:'Noto Sans JP',sans-serif;font-weight:${active?700:400}">${c.l}${arrow}</button>`;
+      }).join('')}
+    </div>`;
+    // Table rows with rank highlight
+    const rows=statsArr.map(s=>{
+      const cell=(col,val,isRank=true)=>{
+        const isMax=isRank&&maxVal[col]!==null&&val>0&&val===maxVal[col];
+        return`<td style="${isMax?'color:var(--red);font-weight:900':''}">${typeof val==='number'&&val%1!==0?fmt(val):val}</td>`;
+      };
+      return`<tr>
+        <td>${s.name}</td>
+        ${cell('PA',s.PA)}${cell('AB',s.AB)}${cell('H',s.H)}
+        <td style="${maxVal['BA']!==null&&s.BA>0&&Math.abs(s.BA-maxVal['BA'])<0.0001?'color:var(--red);font-weight:900':s.BA>=.3?'color:var(--green2);font-weight:700':''}">${fmt(s.BA)}</td>
+        <td style="${maxVal['OBP']!==null&&s.OBP>0&&Math.abs(s.OBP-maxVal['OBP'])<0.0001?'color:var(--red);font-weight:900':s.OBP>=.35?'color:var(--green2);font-weight:700':''}">${fmt(s.OBP)}</td>
+        <td style="${maxVal['SLG']!==null&&s.SLG>0&&Math.abs(s.SLG-maxVal['SLG'])<0.0001?'color:var(--red);font-weight:900':''}">${fmt(s.SLG)}</td>
+        <td style="${maxVal['OPS']!==null&&s.OPS>0&&Math.abs(s.OPS-maxVal['OPS'])<0.0001?'color:var(--red);font-weight:900':s.OPS>=.8?'color:var(--green2);font-weight:700':''}">${fmt(s.OPS)}</td>
+        ${cell('RBI',s.RBI)}${cell('R',s.R)}${cell('HR',s.HR)}${cell('D2',s.D2)}${cell('D3',s.D3)}
+        ${cell('K',s.K)}${cell('BB',s.BB)}${cell('HBP',s.HBP)}${cell('SAC',s.SAC)}${cell('SF',s.SF)}${cell('SB',s.SB)}
+      </tr>`;
+    }).join('');
+    el.innerHTML=`
+      ${sortBar}
+      <div style="font-size:.65rem;color:var(--text2);margin-bottom:5px">← 横にスクロール ｜ <span style="color:var(--red);font-weight:700">赤字</span>=各項目1位</div>
+      <div class="stats-scroll"><table class="stbl">${this._stblHd()}<tbody>${rows}</tbody></table></div>
+      <div style="margin-top:11px;font-size:.67rem;color:var(--text2);line-height:1.9;background:var(--bg3);border-radius:8px;padding:10px;border:1px solid var(--border)">
+        <strong style="color:var(--navy)">計算式（MLB公式準拠）</strong><br>
+        打率 = 安打 ÷ 打数<br>
+        出塁率 = (安打+四球+死球) ÷ (打数+四球+死球+犠飛)<br>
+        ※四球には故意四球を含む。犠打は打数・出塁率分母から除外。<br>
+        長打率 = 塁打数 ÷ 打数　（1B=1, 2B=2, 3B=3, HR=4）<br>
+        OPS = 出塁率 + 長打率
+      </div>`;
+  },
+  _sortStats(key){
+    if(this._sortKey===key)this._sortDir=!this._sortDir;
+    else{this._sortKey=key;this._sortDir=true;}
+    this._allStats();
+  },
+  _confirm(title,msg,onOk,okLabel='削除する'){
+    const d=document.createElement('div');d.className='confirm-overlay';d.id='cdlg';
+    d.innerHTML=`<div class="confirm-box"><h3>${title}</h3><p>${msg.replace(/\n/g,'<br>')}</p><div class="confirm-btns"><button class="cbtn-cancel" onclick="document.getElementById('cdlg').remove()">キャンセル</button><button class="cbtn-ok" id="cok">${okLabel}</button></div></div>`;
+    document.body.appendChild(d);
+    document.getElementById('cok').onclick=()=>{d.remove();onOk();};
+  },
+    toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(this._tt);this._tt=setTimeout(()=>el.classList.remove('show'),2200)}
+};
+window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('ng-date').value=new Date().toISOString().slice(0,10);
+  A._home();
+  document.getElementById('nav-sb').addEventListener('click',()=>{
+    if(A.curGameId)A.nav('scorebook');else A.toast('試合を選択してください');
+  });
+});
+</script>
+</body>
+</html>
